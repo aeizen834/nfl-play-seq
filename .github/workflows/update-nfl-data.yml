@@ -10,6 +10,13 @@ on:
     - cron: '0 11 * * 5'
   workflow_dispatch:  # Allows manual triggering
 
+permissions:  # ADD THIS SECTION
+  contents: write
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+
 jobs:
   update-and-deploy:
     runs-on: ubuntu-latest

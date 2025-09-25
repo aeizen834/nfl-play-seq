@@ -55,7 +55,7 @@ mutate(
 ) 
 ################################################################################
 seq_epa <- chart_data %>%
-  ################################################################################
+  ##############################################################################
 filter(pass == 1 | rush == 1) %>%
   select(game_id,week,season_type,posteam,qtr,down,drive_no, play_no, 
          play_type,playType,desc, epa, success, wp) %>% 
@@ -68,7 +68,7 @@ filter(pass == 1 | rush == 1) %>%
          seq_as_start = paste(playType,t_next_play,sep = '-'),
          seq_as_end = lag(seq_as_start)
   )
-################################################################################
+  ##############################################################################
 
 s <- c('Pass-Pass','Run-Run','Pass-Run','Run-Pass')
 all_seq <- c()
@@ -85,6 +85,7 @@ for (i in 1:4) {
 
 # FIXED: Write to the correct path that matches your app.R
 all_seq %>% write_csv('All Seq.csv')
+seq_epa %>% write_csv('NFL pbp.csv')
 
 # ADDED: Error checking to ensure file was created successfully
 if (file.exists("All Seq.csv")) {
@@ -92,6 +93,14 @@ if (file.exists("All Seq.csv")) {
   file_size <- file.size("All Seq.csv")
   cat("📊 File size:", round(file_size / 1024, 2), "KB\n")
   cat("📈 Rows in dataset:", nrow(all_seq), "\n")
+} else {
+  stop("❌ Failed to create All Seq.csv file")
+}
+if (file.exists("NFL pbp.csv")) {
+  cat("✅ All Seq.csv created successfully at", as.character(Sys.time()), "\n")
+  file_size <- file.size("NFL pbp.csv")
+  cat("📊 File size:", round(file_size / 1024, 2), "KB\n")
+  cat("📈 Rows in dataset:", nrow(seq_epa), "\n")
 } else {
   stop("❌ Failed to create All Seq.csv file")
 }

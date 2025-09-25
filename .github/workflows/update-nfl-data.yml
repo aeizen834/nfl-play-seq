@@ -69,13 +69,17 @@ jobs:
         })
         "
         
-    - name: Check if data file exists
-      run: |
-        if [ ! -f "All Seq.csv" ]; then
-          echo "Error: All Seq.csv not found after data update"
-          exit 1
-        fi
-        echo "Data file confirmed to exist"
+  - name: Check if data files exist
+    run: |
+      if [ ! -f "All Seq.csv" ]; then
+        echo "Error: All Seq.csv not found after data update"
+        exit 1
+      fi
+      if [ ! -f "NFL pbp.csv" ]; then
+        echo "Error: NFL pbp.csv not found after data update"
+        exit 1
+      fi
+      echo "Both data files confirmed to exist"
         
     - name: Deploy to shinyapps.io
       run: |
@@ -114,7 +118,7 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add All\ Seq.csv
+        git add All\ Seq.csv NFL\ pbp.csv
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else

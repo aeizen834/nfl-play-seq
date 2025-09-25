@@ -2,16 +2,7 @@ library(shiny)
 library(scales)
 library(bslib)
 library(tidyverse)
-library(rvest)
-library(ggpattern)
-library(shadowtext)
-library(vistime)
-library(ggthemes)
 library(nflverse)
-library(showtext)
-library(sysfonts)
-library(ggtext)
-library(ggimage)
 library(gt)
 library(gtExtras)
 library(rsconnect)
@@ -49,7 +40,7 @@ split_data_for_display <- function(data) {
   return(cbind(data_left, data_right))
 }
 
-seq_table <- function(play_data){
+seq_table <- function(play_data, pbp_data){
   
   seq_chart <- play_data %>% 
     group_by(posteam,seq_group) %>% 
@@ -59,7 +50,7 @@ seq_table <- function(play_data){
           by.x = 'posteam',by.y = 'team_abbr') %>% 
     unique()
   
-  whole_totals <- play_data %>% 
+  whole_totals <- pbp_data %>% 
     group_by(posteam) %>% 
     mutate(total_epa = mean(epa),
            total_sr = mean(success)) 
@@ -153,7 +144,9 @@ seq_table <- function(play_data){
 }
 
 load_app_data <- function(){
-  read_csv('All Seq.csv', show_col_types = F)
+  list(all_seq = read_csv('All Seq.csv', show_col_types = F),
+       pbp = read_csv('NFL pbp.csv', show_col_types = F)
+  )
 }
 # Define UI for application that draws a histogram
 icon <- div(
@@ -249,14 +242,16 @@ ui <- navbarPage(
                          choices = c(1,2,3,4,'OT' = 5),
                          selected = 1:5,
                          inline = T)),
-      column(6,radioButtons('order',
+      column(6,selectInput('order',
                    'Order Data:',
-                   choices = c('Pass-Pass Success Rate' = 'PP_SR', 'Pass-Pass EPA/Play' = 'PP_EPA',
-                               'Pass-Run Success Rate' = 'PR_SR', 'Pass-Run EPA/Play' = 'PR_EPA',
-                               'Run-Pass Success Rate' = 'RP_SR', 'Run-Pass EPA/Play' = 'RP_EPA',
-                               'Run-Run Success Rate' = 'RR_SR', 'Run-Run EPA/Play' = 'RR_EPA'),
-                   selected = 'PP_EPA',
-                   inline = T))
+                   choices = c('Overall Success Rate (SR)' = 'SR', 'Overall EPA/Play' = 'EPA',
+                               'Pass-Pass SR' = 'PP_SR', 'Pass-Pass EPA' = 'PP_EPA',
+                               'Pass-Run SR' = 'PR_SR', 'Pass-Run EPA' = 'PR_EPA',
+                               'Run-Pass SR' = 'RP_SR', 'Run-Pass EPA' = 'RP_EPA',
+                               'Run-Run SR' = 'RR_SR', 'Run-Run EPA' = 'RR_EPA'),
+                   selected = 'SR'#,
+                   # inline = T
+                   ))
       
     ),
 
@@ -307,14 +302,20 @@ server <- function(input, output) {
   # Stats Overview GT
   output$overview <- render_gt({
     
-    t <- app_data %>% 
+    t <- app_data$all_seq %>% 
+      filter(between(week,as.numeric(min(input$week)),max(input$week)),
+             between(wp,min(input$wp)/100,max(input$wp)/100),
+             down %in% input$down,
+             qtr %in% input$qtr)
+    
+    pbp <- app_data$pbp %>% 
       filter(between(week,as.numeric(min(input$week)),max(input$week)),
              between(wp,min(input$wp)/100,max(input$wp)/100),
              down %in% input$down,
              qtr %in% input$qtr)
     
     
-    play_table <- seq_table(t) %>% 
+    play_table <- seq_table(t, pbp) %>% 
       select(-logo) %>% 
       arrange(desc(.data[[input$order]])) %>%
       unique() %>% 
@@ -367,11 +368,11 @@ server <- function(input, output) {
       tab_spanner('Pass-Pass Plays', columns = c(PP_SR,PP_EPA)) %>%
       tab_spanner('Run-Run Plays', columns = c(RR_SR,RR_EPA)) %>%
       tab_spanner('Pass-Run Plays', columns = c(PR_SR,PR_EPA)) %>%
-      cols_label(PP_SR = 'Success Rate', PP_EPA = 'EPA/Play',
-                 PR_SR = 'Success Rate', PR_EPA = 'EPA/Play',
-                 RR_SR = 'Success Rate', RR_EPA = 'EPA/Play',
-                 RP_SR = 'Success Rate', RP_EPA = 'EPA/Play',
-                 SR = 'Success Rate', EPA = 'EPA/Play',
+      cols_label(PP_SR = 'SR', PP_EPA = 'EPA',
+                 PR_SR = 'SR', PR_EPA = 'EPA',
+                 RR_SR = 'SR', RR_EPA = 'EPA',
+                 RP_SR = 'SR', RP_EPA = 'EPA',
+                 SR = 'SR', EPA = 'EPA',
                  wordmark = 'Team', rank = 'Rank') %>% 
       fmt_percent(columns = c(SR,PP_SR,PR_SR,RP_SR,RR_SR), decimals = 1) %>% 
       data_color(columns = EPA, palette = c("#800080","green"), domain = range(play_table$EPA)) %>% 
@@ -391,11 +392,11 @@ server <- function(input, output) {
       tab_spanner('Pass-Pass Plays ', columns = c(PP_SR_2,PP_EPA_2)) %>%
       tab_spanner('Run-Run Plays ', columns = c(RR_SR_2,RR_EPA_2)) %>%
       tab_spanner('Pass-Run Plays ', columns = c(PR_SR_2,PR_EPA_2)) %>%
-      cols_label(PP_SR_2 = 'Success Rate', PP_EPA_2 = 'EPA/Play',
-                 PR_SR_2 = 'Success Rate', PR_EPA_2 = 'EPA/Play',
-                 RR_SR_2 = 'Success Rate', RR_EPA_2 = 'EPA/Play',
-                 RP_SR_2 = 'Success Rate', RP_EPA_2 = 'EPA/Play',
-                 SR_2 = 'Success Rate', EPA_2 = 'EPA/Play',
+      cols_label(PP_SR_2 = 'SR', PP_EPA_2 = 'EPA',
+                 PR_SR_2 = 'SR', PR_EPA_2 = 'EPA',
+                 RR_SR_2 = 'SR', RR_EPA_2 = 'EPA',
+                 RP_SR_2 = 'SR', RP_EPA_2 = 'EPA',
+                 SR_2 = 'SR', EPA_2 = 'EPA',
                  wordmark_2 = 'Team', rank_2 = 'Rank') %>% 
       fmt_percent(columns = c(SR_2,PP_SR_2,PR_SR_2,RP_SR_2,RR_SR_2), decimals = 1) %>%
       data_color(columns = EPA_2, palette = c("#800080","green"), domain = range(play_table$EPA)) %>% 
@@ -408,7 +409,8 @@ server <- function(input, output) {
       data_color(columns = RP_SR_2, palette = c("#800080","green"), domain = range(play_table$RP_SR)) %>% 
       data_color(columns = RR_EPA_2, palette = c("#800080","green"), domain = range(play_table$RR_EPA)) %>% 
       data_color(columns = RR_SR_2, palette = c("#800080","green"), domain = range(play_table$RR_SR)) %>% 
-      gt_img_rows(wordmark_2) 
+      gt_img_rows(wordmark_2) %>% 
+      opt_table_outline(color = 'black')
   })
   
   # Table on Drill In Page

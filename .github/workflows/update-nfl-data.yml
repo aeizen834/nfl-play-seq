@@ -10,7 +10,7 @@ on:
     - cron: '0 11 * * 5'
   workflow_dispatch:  # Allows manual triggering
 
-permissions:  # ADD THIS SECTION
+permissions:
   contents: write
 
 jobs:
@@ -60,26 +60,26 @@ jobs:
           source('Sequence Play Comparisons.R')
           cat('Data update completed successfully\n')
         }, error = function(e) {
-          cat('Error in data update:', e$message, '\n')
+          cat('Error in data update:', conditionMessage(e), '\n')
           if (file.exists('error_notification.R')) {
             source('error_notification.R')
-            send_error_email('Data Update Failed', e$message)
+            send_error_email('Data Update Failed', conditionMessage(e))
           }
           quit(status = 1)
         })
         "
         
-  - name: Check if data files exist
-    run: |
-      if [ ! -f "All Seq.csv" ]; then
-        echo "Error: All Seq.csv not found after data update"
-        exit 1
-      fi
-      if [ ! -f "NFL pbp.csv" ]; then
-        echo "Error: NFL pbp.csv not found after data update"
-        exit 1
-      fi
-      echo "Both data files confirmed to exist"
+    - name: Check if data files exist
+      run: |
+        if [ ! -f "All Seq.csv" ]; then
+          echo "Error: All Seq.csv not found after data update"
+          exit 1
+        fi
+        if [ ! -f "NFL pbp.csv" ]; then
+          echo "Error: NFL pbp.csv not found after data update"
+          exit 1
+        fi
+        echo "Both data files confirmed to exist"
         
     - name: Deploy to shinyapps.io
       run: |
@@ -105,10 +105,10 @@ jobs:
           cat('App available at: https://', '${{ secrets.SHINYAPPS_NAME }}', '.shinyapps.io/nfl-play-seq/\n', sep='')
           
         }, error = function(e) {
-          cat('Error in deployment:', e$message, '\n')
+          cat('Error in deployment:', conditionMessage(e), '\n')
           if (file.exists('error_notification.R')) {
             source('error_notification.R')
-            send_error_email('Deployment Failed', e$message)
+            send_error_email('Deployment Failed', conditionMessage(e))
           }
           quit(status = 1)
         })

@@ -1,6 +1,3 @@
-##### New Idea (9/3)
-#### What if I built a table to shows the efficiency of running a play after another?
-################################################################################
 rm(list = ls())
 library(tidyverse)
 library(rvest)

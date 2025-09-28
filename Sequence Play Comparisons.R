@@ -18,7 +18,7 @@ library(gtExtras)
 ################################################################################
 play_by_play <- load_pbp(seasons = 2025) %>% 
   clean_pbp() %>% 
-  select(game_id,week,season,season_type,posteam,drive,play_id,qtr,down,ydstogo,
+  select(game_id,week,season,season_type,posteam,defteam,drive,play_id,qtr,down,ydstogo,
          goal_to_go,wp,play_type,play_type_nfl,desc,epa,success,yards_gained,
          pass,rush,pass_attempt,incomplete_pass,qb_scramble,rusher_player_id,
          penalty,penalty_team,penalty_yards,touchdown,field_goal_attempt,
@@ -57,7 +57,7 @@ mutate(
 seq_epa <- chart_data %>%
   ##############################################################################
 filter(pass == 1 | rush == 1) %>%
-  select(game_id,week,season_type,posteam,qtr,down,drive_no, play_no, 
+  select(game_id,week,season_type,posteam,defteam,qtr,down,drive_no, play_no, 
          play_type,playType,desc, epa, success, wp) %>% 
   arrange(game_id,posteam,drive_no,play_no) %>% 
   group_by(posteam,drive_no) %>% 

@@ -57,7 +57,7 @@ filter(pass == 1 | rush == 1) %>%
   select(game_id,week,season_type,posteam,defteam,qtr,down,drive_no, play_no, 
          play_type,playType,desc, epa, success, wp) %>% 
   arrange(game_id,posteam,drive_no,play_no) %>% 
-  group_by(posteam,drive_no) %>% 
+  group_by(game_id,posteam,drive_no) %>% 
   mutate(t_last_play = lag(playType),
          t_next_play = lead(playType),
          t_last_down = lag(down),

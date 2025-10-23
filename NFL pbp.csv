@@ -2846,7 +2846,7 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_02_LAC_LV,2,REG,LV,LAC,2,3,5,6,run,Run,"(5:21) (Shotgun) 3-Z.White up the middle to LV 37 for -5 yards (0-D.Henley, 96-N.Jones).",-2.498682454810478,0,0.40290188789367676,Pass,NA,2,NA,Run-NA,Pass-Run
 2025_02_LAC_LV,2,REG,LV,LAC,2,1,6,1,pass,Pass,(1:45) (Shotgun) 7-G.Smith pass short left to 23-D.Laube ran ob at LV 41 for 13 yards (0-D.Henley).,0.8140254572499543,1,0.1957911103963852,NA,Pass,NA,1,Pass-Pass,NA
 2025_02_LAC_LV,2,REG,LV,LAC,2,1,6,2,pass,Pass,"(1:37) (No Huddle, Shotgun) 7-G.Smith pass short middle to 23-D.Laube to LV 45 for 4 yards (3-D.James).",-0.30465621256735176,0,0.20829765498638153,Pass,Pass,1,2,Pass-Pass,Pass-Pass
-2025_02_LAC_LV,2,REG,LV,LAC,2,2,6,3,pass,Pass,"(1:20) (No Huddle, Shotgun) 7-G.Smith pass incomplete short right to 1-T.Tucker.",-0.42431289341766387,0,0.20907974243164063,Pass,Pass,1,3,Pass-Pass,Pass-Pass
+2025_02_LAC_LV,2,REG,LV,LAC,2,2,6,3,pass,Pass,"(1:20) (No Huddle, Shotgun) 7-G.Smith pass incomplete short right to 1-T.Tucker.",-0.42431289341766387,0,0.20907974243164062,Pass,Pass,1,3,Pass-Pass,Pass-Pass
 2025_02_LAC_LV,2,REG,LV,LAC,2,3,6,4,pass,Pass,(1:14) (Shotgun) 7-G.Smith pass deep right intended for 10-D.Thornton INTERCEPTED by 23-T.Jefferson at LAC 1. 23-T.Jefferson to LAC 1 for no gain (10-D.Thornton).,-1.1553323390544392,0,0.20106779038906097,Pass,NA,2,NA,Pass-NA,Pass-Pass
 2025_02_LAC_LV,2,REG,LV,LAC,3,1,7,1,pass,Pass,(7:22) (Shotgun) 7-G.Smith pass incomplete short right to 1-T.Tucker (29-T.Still).,-0.6020031946245581,0,0.096864253282547,NA,Run,NA,2,Pass-Run,NA
 2025_02_LAC_LV,2,REG,LV,LAC,3,2,7,2,run,Run,(7:19) 2-A.Jeanty left guard pushed ob at LV 25 for 5 yards (29-T.Still).,-0.3199711889028549,0,0.08931485563516617,Pass,Pass,1,3,Run-Pass,Pass-Run
@@ -5413,7 +5413,7 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_03_MIA_BUF,3,REG,MIA,BUF,3,1,7,3,run,Run,(1:36) 31-O.Gordon right tackle to BUF 44 for -2 yards (8-T.Bernard).,-1.002774834400043,0,0.2588129937648773,Run,Pass,2,2,Run-Pass,Run-Run
 2025_03_MIA_BUF,3,REG,MIA,BUF,3,2,7,4,pass,Pass,(:29) (Shotgun) 1-T.Tagovailoa pass short right to 28-D.Achane to BUF 46 for 3 yards (47-C.Benford).,-0.7619237308390439,0,0.21291103959083557,Run,Pass,1,3,Pass-Pass,Run-Pass
 2025_03_MIA_BUF,3,REG,MIA,BUF,4,3,7,6,pass,Pass,(15:00) (Shotgun) 1-T.Tagovailoa pass short left to 6-M.Washington to BUF 43 for 3 yards. Lateral to 28-D.Achane to BUF 36 for 7 yards (27-T.White; 24-C.Bishop).,0.09106050850823522,1,0.20523454248905182,Pass,Pass,2,4,Pass-Pass,Pass-Pass
-2025_03_MIA_BUF,3,REG,MIA,BUF,4,4,7,7,pass,Pass,(14:16) (Shotgun) 1-T.Tagovailoa pass short left to 17-J.Waddle ran ob at BUF 21 for 15 yards (9-T.Rapp).,3.369895560084842,1,0.18233108520507813,Pass,Run,3,1,Pass-Run,Pass-Pass
+2025_03_MIA_BUF,3,REG,MIA,BUF,4,4,7,7,pass,Pass,(14:16) (Shotgun) 1-T.Tagovailoa pass short left to 17-J.Waddle ran ob at BUF 21 for 15 yards (9-T.Rapp).,3.369895560084842,1,0.18233108520507812,Pass,Run,3,1,Pass-Run,Pass-Pass
 2025_03_MIA_BUF,3,REG,MIA,BUF,4,1,7,8,run,Run,(13:35) 28-D.Achane up the middle to BUF 7 for 14 yards (45-S.Thompson; 9-T.Rapp).,0.9004212868749164,1,0.3069520890712738,Pass,Run,4,1,Run-Run,Pass-Run
 2025_03_MIA_BUF,3,REG,MIA,BUF,4,1,7,9,run,Run,(13:07) (No Huddle) 28-D.Achane left tackle to BUF 5 for 2 yards (42-D.Williams).,-0.13973894610535353,0,0.3265359699726105,Run,Pass,1,2,Run-Pass,Run-Run
 2025_03_MIA_BUF,3,REG,MIA,BUF,4,2,7,10,pass,Pass,"(12:22) (Shotgun) 1-T.Tagovailoa pass short right to 10-T.Hill for 5 yards, TOUCHDOWN.",1.6857918808818795,1,0.3157790005207062,Run,NA,1,NA,Pass-NA,Run-Pass
@@ -11031,7 +11031,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_06_SF_TB,6,REG,SF,TB,4,3,9,3,pass,Pass,(7:17) (Shotgun) 10-M.Jones pass incomplete deep left to 15-J.Jennings.,-1.6783538246527314,0,0.11953447014093399,Pass,Pass,2,1,Pass-Pass,Pass-Pass
 2025_06_SF_TB,6,REG,SF,TB,4,1,9,4,pass,Pass,(7:06) 10-M.Jones pass short right to 84-K.Bourne to TB 38 for 12 yards (22-K.Vildor).,0.8141751035582274,1,0.14139148592948914,Pass,Pass,3,1,Pass-Pass,Pass-Pass
 2025_06_SF_TB,6,REG,SF,TB,4,1,9,5,pass,Pass,(6:35) 10-M.Jones pass incomplete short right to 84-K.Bourne (22-K.Vildor).,-0.4756447239778936,0,0.16708102822303772,Pass,Pass,1,2,Pass-Pass,Pass-Pass
+<<<<<<< HEAD
 2025_06_SF_TB,6,REG,SF,TB,4,2,9,6,pass,Pass,(6:32) (Shotgun) 10-M.Jones pass short left to 88-J.Tonges to TB 29 for 9 yards (23-T.Smith).,0.6424910657224245,1,0.15073013305664063,Pass,Run,1,3,Pass-Run,Pass-Pass
+=======
+2025_06_SF_TB,6,REG,SF,TB,4,2,9,6,pass,Pass,(6:32) (Shotgun) 10-M.Jones pass short left to 88-J.Tonges to TB 29 for 9 yards (23-T.Smith).,0.6424910657224245,1,0.15073013305664062,Pass,Run,1,3,Pass-Run,Pass-Pass
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_06_SF_TB,6,REG,SF,TB,4,3,9,7,run,Run,(6:10) (No Huddle) 10-M.Jones up the middle to TB 29 for no gain (8-S.Dennis). (Virtual Measurement).,-1.0842630514525808,0,0.15987567603588104,Pass,Pass,2,4,Run-Pass,Pass-Run
 2025_06_SF_TB,6,REG,SF,TB,4,4,9,8,pass,Pass,"(5:52) (Shotgun) 10-M.Jones pass deep left intended for 15-J.Jennings INTERCEPTED by 35-J.Dean at TB 14. 35-J.Dean to TB 20 for 6 yards (88-J.Tonges). PENALTY on SF-71-T.Williams, Unnecessary Roughness, 15 yards, enforced at TB 20.",-2.8009153371676803,0,0.10369499027729034,Run,NA,3,NA,Pass-NA,Run-Pass
 2025_06_SF_TB,6,REG,SF,TB,4,1,10,1,pass,Pass,(1:50) (Shotgun) 10-M.Jones sacked at SF 25 for -9 yards (0-Y.Diaby).,-1.119571475428529,0,0.015642665326595306,NA,Pass,NA,2,Pass-Pass,NA
@@ -11326,7 +11330,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_ATL_SF,7,REG,SF,ATL,4,1,9,2,run,Run,(1:20) 3-B.Robinson up the middle to ATL 26 for 4 yards (3-J.Bates; 56-L.Floyd).,-1.0748363037710078,0,0.9982900023460388,Run,NA,1,NA,Run-NA,Run-Run
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,1,1,1,pass,Pass,(12:16) 9-B.Young pass short right to 84-M.Evans pushed ob at CAR 47 for 13 yards (51-F.Mauigoa).,0.9468859992921352,1,0.5161387920379639,NA,Run,NA,1,Pass-Run,NA
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,1,1,2,run,Run,(11:41) 30-C.Hubbard up the middle to 50 for 3 yards (97-H.Phillips).,-0.2922142492607236,0,0.5299929976463318,Pass,Pass,1,2,Run-Pass,Pass-Run
+<<<<<<< HEAD
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,2,1,3,pass,Pass,"(11:02) (Shotgun) 9-B.Young to CAR 45 for -5 yards. FUMBLES, and recovers at CAR 45. 9-B.Young pass short right to 4-T.McMillan to NYJ 39 for 11 yards (27-M.Moore; 51-F.Mauigoa).",1.208870344562456,1,0.5367724299430847,Run,Pass,1,1,Pass-Pass,Run-Pass
+=======
+2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,2,1,3,pass,Pass,"(11:02) (Shotgun) 9-B.Young to CAR 45 for -5 yards. FUMBLES, and recovers at CAR 45. 9-B.Young pass short right to 4-T.McMillan to NYJ 39 for 11 yards (27-M.Moore).",1.208870344562456,1,0.5367724299430847,Run,Pass,1,1,Pass-Pass,Run-Pass
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,1,1,4,run,Pass,(10:25) (Shotgun) 9-B.Young scrambles left end to NYJ 33 for 6 yards (1-A.Gardner).,0.28495146217755973,1,0.5791968703269958,Pass,Run,2,2,Pass-Run,Pass-Pass
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,2,1,5,run,Run,(9:46) (Shotgun) 30-C.Hubbard left guard to NYJ 30 for 3 yards (9-W.McDonald; 97-H.Phillips).,-0.2307186669204384,0,0.5869229435920715,Pass,Run,1,3,Run-Run,Pass-Run
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,3,1,6,run,Run,(9:07) 30-C.Hubbard left guard to NYJ 28 for 2 yards (1-A.Gardner). NYJ-1-A.Gardner was injured during the play.,0.7140341046033427,1,0.567999005317688,Run,Pass,2,1,Run-Pass,Run-Run
@@ -11334,7 +11342,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,2,1,8,pass,Pass,(8:26) (Shotgun) 9-B.Young pass short right to 15-Ji.Horn to NYJ 20 for 8 yards (8-A.Cisco).,0.27425335138104856,1,0.5994356274604797,Pass,Run,1,3,Pass-Run,Pass-Pass
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,3,1,9,run,Run,(7:50) 30-C.Hubbard right guard to NYJ 17 for 3 yards (44-J.Sherwood; 23-A.Thomas).,0.8473181432927959,1,0.5951863527297974,Pass,Pass,2,1,Run-Pass,Pass-Run
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,1,1,10,pass,Pass,(7:08) (Shotgun) 9-B.Young pass short right to 17-X.Legette to NYJ 10 for 7 yards (44-J.Sherwood). ** Injury Update: NYJ-1-A.Gardner has returned to the game.,0.25207082770066336,1,0.6233733296394348,Run,Run,3,2,Pass-Run,Run-Pass
+<<<<<<< HEAD
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,2,1,11,run,Run,"(6:32) 30-C.Hubbard left guard to NYJ 12 for -2 yards (44-J.Sherwood, 11-J.Johnson).",-0.9074889802141115,0,0.6273828148841858,Pass,Pass,1,3,Run-Pass,Pass-Run
+=======
+2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,2,1,11,run,Run,(6:32) 30-C.Hubbard left guard to NYJ 12 for -2 yards (44-J.Sherwood).,-0.9074889802141115,0,0.6273828148841858,Pass,Pass,1,3,Run-Pass,Pass-Run
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,3,1,12,pass,Pass,(5:50) (Shotgun) 9-B.Young pass incomplete short left to 17-X.Legette [72-M.Clemons].,-1.2712593349754426,0,0.6020997762680054,Run,NA,2,NA,Pass-NA,Run-Pass
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,1,2,1,run,Run,(2:41) 5-R.Dowdle left end to CAR 20 for 13 yards (8-A.Cisco).,0.8002822967246175,1,0.6001458168029785,NA,Run,NA,1,Run-Run,NA
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,1,1,2,2,run,Run,(2:04) 5-R.Dowdle up the middle to CAR 23 for 3 yards (55-B.McGregor; 51-F.Mauigoa).,-0.34966146759688854,0,0.6194999814033508,Run,Pass,1,2,Run-Pass,Run-Run
@@ -11379,7 +11391,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,4,1,8,6,run,Run,(13:20) 5-R.Dowdle up the middle to NYJ 44 for 3 yards (21-B.Stephens).,-0.34070726740173995,0,0.9140301942825317,Run,Run,1,2,Run-Run,Run-Run
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,4,2,8,7,run,Run,(12:41) 5-R.Dowdle right guard to NYJ 44 for no gain (95-Q.Williams; 91-J.Briggs). ** Injury Update: CAR-17-X.Legette has returned to the game.,-0.80082848505117,0,0.906111478805542,Run,Pass,1,3,Run-Pass,Run-Run
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,4,3,8,8,pass,Pass,(12:01) (Shotgun) 14-A.Dalton pass short left to 17-X.Legette to NYJ 38 for 6 yards (26-I.Oliver).,-0.39750957814976573,0,0.9037917256355286,Run,Run,2,4,Pass-Run,Run-Pass
+<<<<<<< HEAD
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,4,4,8,9,run,Run,(11:22) 5-R.Dowdle up the middle to NYJ 34 for 4 yards (95-Q.Williams).,2.3640288008609787,1,0.9061329364776611,Pass,Run,3,1,Run-Run,Pass-Run
+=======
+2025_07_CAR_NYJ,7,REG,CAR,NYJ,4,4,8,9,run,Run,(11:22) 5-R.Dowdle up the middle to NYJ 34 for 4 yards (95-Q.Williams; 97-H.Phillips).,2.3640288008609787,1,0.9061329364776611,Pass,Run,3,1,Run-Run,Pass-Run
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,4,1,8,10,run,Run,(10:45) (Shotgun) 5-R.Dowdle left end to NYJ 29 for 5 yards (44-J.Sherwood).,0.21671683643944561,1,0.9312115907669067,Run,Pass,4,2,Run-Pass,Run-Run
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,4,2,8,11,pass,Pass,(10:06) (Shotgun) 14-A.Dalton pass incomplete short left to 0-J.Sanders (21-B.Stephens).,-0.8085231608711183,0,0.943652868270874,Run,Pass,1,3,Pass-Pass,Run-Pass
 2025_07_CAR_NYJ,7,REG,CAR,NYJ,4,3,8,12,pass,Pass,(9:59) (Shotgun) 14-A.Dalton sacked at NYJ 38 for -9 yards (44-J.Sherwood).,-3.1745131615316495,0,0.9413319230079651,Pass,NA,2,NA,Pass-NA,Pass-Pass
@@ -11563,9 +11579,15 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_GB_ARI,7,REG,GB,ARI,4,2,7,10,pass,Pass,"(15:00) (Shotgun) 10-J.Love pass short right to 85-T.Kraft for 7 yards, TOUCHDOWN.",1.9374762972001918,1,0.32720643281936646,Run,NA,1,NA,Pass-NA,Run-Pass
 2025_07_GB_ARI,7,REG,GB,ARI,4,1,8,1,pass,Pass,"(8:57) 10-J.Love to GB 14 for -2 yards. FUMBLES, and recovers at GB 14. 10-J.Love pass incomplete short right.",-0.5730563374236226,0,0.32887300848960876,NA,Pass,NA,2,Pass-Pass,NA
 2025_07_GB_ARI,7,REG,GB,ARI,4,2,8,2,pass,Pass,(8:52) (Shotgun) 10-J.Love pass short left to 87-R.Doubs pushed ob at GB 20 for 4 yards (34-J.Thompson).,-0.1711231041699648,0,0.29577594995498657,Pass,Pass,1,3,Pass-Pass,Pass-Pass
+<<<<<<< HEAD
 2025_07_GB_ARI,7,REG,GB,ARI,4,3,8,3,pass,Pass,(8:10) (Shotgun) 10-J.Love pass incomplete short right to 85-T.Kraft.,-1.3651185566559434,0,0.28925976157188416,Pass,NA,2,NA,Pass-NA,Pass-Pass
 2025_07_GB_ARI,7,REG,GB,ARI,4,1,9,1,run,Run,(5:51) 8-J.Jacobs right tackle to ARI 45 for 3 yards (3-B.Baker; 92-B.Nichols).,-0.15665119315963238,0,0.4106869101524353,NA,Pass,NA,2,Run-Pass,NA
 2025_07_GB_ARI,7,REG,GB,ARI,4,2,9,2,pass,Pass,(5:11) (Shotgun) 10-J.Love pass incomplete short left to 85-T.Kraft (93-C.Campbell).,-0.7216509147547185,0,0.3901307284832001,Run,Pass,1,3,Pass-Pass,Run-Pass
+=======
+2025_07_GB_ARI,7,REG,GB,ARI,4,3,8,3,pass,Pass,(8:10) 10-J.Love pass incomplete short right to 85-T.Kraft.,-1.3651185566559434,0,0.28925976157188416,Pass,NA,2,NA,Pass-NA,Pass-Pass
+2025_07_GB_ARI,7,REG,GB,ARI,4,1,9,1,run,Run,(5:51) 8-J.Jacobs right tackle to ARI 45 for 3 yards (3-B.Baker; 92-B.Nichols).,-0.15665119315963238,0,0.4106869101524353,NA,Pass,NA,2,Run-Pass,NA
+2025_07_GB_ARI,7,REG,GB,ARI,4,2,9,2,pass,Pass,(5:11) 10-J.Love pass incomplete short left to 85-T.Kraft (93-C.Campbell).,-0.7216509147547185,0,0.3901307284832001,Run,Pass,1,3,Pass-Pass,Run-Pass
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_GB_ARI,7,REG,GB,ARI,4,3,9,3,pass,Pass,(5:08) (Shotgun) 10-J.Love pass short left to 85-T.Kraft to ARI 37 for 8 yards (42-D.Taylor-Demerson).,1.5611243229359388,1,0.34292396903038025,Pass,Run,2,1,Pass-Run,Pass-Pass
 2025_07_GB_ARI,7,REG,GB,ARI,4,1,9,4,run,Run,(4:26) (Shotgun) 8-J.Jacobs right end to ARI 32 for 5 yards (56-D.Robinson; 27-A.Davis-Gaither).,0.07526653818786144,1,0.45909571647644043,Pass,Run,3,2,Run-Run,Pass-Run
 2025_07_GB_ARI,7,REG,GB,ARI,4,2,9,5,run,Run,(3:48) (Shotgun) 8-J.Jacobs right end to ARI 28 for 4 yards (56-D.Robinson).,0.08036003424786031,1,0.4468480050563812,Run,Run,1,3,Run-Run,Run-Run
@@ -11638,7 +11660,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_HOU_SEA,7,REG,HOU,SEA,4,1,14,1,pass,Pass,(4:34) (Shotgun) 7-C.Stroud pass deep right to 14-J.Noel to SEA 28 for 22 yards (8-C.Bryant).,1.095780756091699,1,0.02234398014843464,NA,Pass,NA,1,Pass-Pass,NA
 2025_07_HOU_SEA,7,REG,HOU,SEA,4,1,14,2,pass,Pass,"(4:10) (No Huddle, Shotgun) 7-C.Stroud pass short right to 86-D.Schultz to SEA 15 for 13 yards (42-D.Thomas).",1.0651422159280628,1,0.026402704417705536,Pass,Pass,1,1,Pass-Pass,Pass-Pass
 2025_07_HOU_SEA,7,REG,HOU,SEA,4,1,14,3,pass,Pass,"(3:46) (No Huddle, Shotgun) 7-C.Stroud pass incomplete short left to 14-J.Noel.",-0.5288371128845029,0,0.026744356378912926,Pass,Pass,1,2,Pass-Pass,Pass-Pass
+<<<<<<< HEAD
 2025_07_HOU_SEA,7,REG,HOU,SEA,4,2,14,4,pass,Pass,(3:42) (Shotgun) 7-C.Stroud pass short left to 17-B.Berrios to SEA 21 for -1 yards (8-C.Bryant).,-0.5303410027408972,0,0.01868152990937233,Pass,Pass,1,3,Pass-Pass,Pass-Pass
+=======
+2025_07_HOU_SEA,7,REG,HOU,SEA,4,2,14,4,pass,Pass,"(3:42) (Shotgun) 7-C.Stroud pass short left to 17-B.Berrios to SEA 21 for -1 yards (8-C.Bryant, 13-E.Jones).",-0.5303410027408972,0,0.01868152990937233,Pass,Pass,1,3,Pass-Pass,Pass-Pass
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_HOU_SEA,7,REG,HOU,SEA,4,3,14,5,run,Pass,"(3:10) (No Huddle, Shotgun) 7-C.Stroud scrambles right end to SEA 6 for 15 yards (29-J.Jobe). PENALTY on SEA-13-E.Jones, Illegal Contact, 3 yards, enforced at SEA 6.",3.139761015889235,1,0.009763856418430805,Pass,Pass,2,1,Pass-Pass,Pass-Pass
 2025_07_HOU_SEA,7,REG,HOU,SEA,4,1,14,6,pass,Pass,(3:01) 57-B.Fisher reported in as eligible. 7-C.Stroud pass incomplete short middle to 27-W.Marks (42-D.Thomas).,-0.4803792744351085,0,0.01735423319041729,Pass,Run,3,2,Pass-Run,Pass-Pass
 2025_07_HOU_SEA,7,REG,HOU,SEA,4,2,14,7,run,Run,"(2:55) 27-W.Marks right guard to SEA 4 for -1 yards (42-D.Thomas, 13-E.Jones).",-1.226031277765287,0,0.018453143537044525,Pass,Pass,1,3,Run-Pass,Pass-Run
@@ -11706,9 +11732,15 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_HOU_SEA,7,REG,SEA,HOU,4,1,14,1,run,Run,"(5:04) 26-Z.Charbonnet up the middle to SEA 9 for 3 yards (4-K.Lassiter, 55-D.Hunter).",-0.18582030152902007,0,0.995567262172699,NA,Pass,NA,2,Run-Pass,NA
 2025_07_HOU_SEA,7,REG,SEA,HOU,4,2,14,2,pass,Pass,(4:57) 14-S.Darnold pass incomplete deep left to 11-J.Smith-Njigba.,-0.45650448254309595,0,0.995055079460144,Run,Pass,1,3,Pass-Pass,Run-Pass
 2025_07_HOU_SEA,7,REG,SEA,HOU,4,3,14,3,pass,Pass,(4:51) (Shotgun) 14-S.Darnold sacked at SEA 1 for -8 yards (96-D.Autry).,-1.5011924321297556,0,0.9967404007911682,Pass,NA,2,NA,Pass-NA,Pass-Pass
+<<<<<<< HEAD
 2025_07_HOU_SEA,7,REG,SEA,HOU,4,1,15,1,run,Run,(1:58) 26-Z.Charbonnet up the middle to SEA 31 for 3 yards (90-S.Rankins; 55-D.Hunter).,-0.4363096001325175,0,0.9856579899787903,NA,Run,NA,2,Run-Run,NA
 2025_07_HOU_SEA,7,REG,SEA,HOU,4,2,15,2,run,Run,(1:53) 26-Z.Charbonnet up the middle to SEA 35 for 4 yards (55-D.Hunter).,-0.18184288078919053,0,0.9824159145355225,Run,Run,1,3,Run-Run,Run-Run
 2025_07_HOU_SEA,7,REG,SEA,HOU,4,3,15,3,run,Run,"(1:10) 26-Z.Charbonnet right guard to SEA 34 for -1 yards (45-E.Speed, 5-J.Pitre). PENALTY on HOU-98-T.Settle, Unnecessary Roughness, 15 yards, enforced at SEA 34.",-0.2655766368843615,0,0.9920791983604431,Run,NA,2,NA,Run-NA,Run-Run
+=======
+2025_07_HOU_SEA,7,REG,SEA,HOU,4,1,15,1,run,Run,"(1:58) 26-Z.Charbonnet up the middle to SEA 31 for 3 yards (90-S.Rankins, 55-D.Hunter).",-0.4363096001325175,0,0.9856579899787903,NA,Run,NA,2,Run-Run,NA
+2025_07_HOU_SEA,7,REG,SEA,HOU,4,2,15,2,run,Run,(1:53) 26-Z.Charbonnet up the middle to SEA 35 for 4 yards (55-D.Hunter).,-0.18184288078919053,0,0.9824159145355225,Run,Run,1,3,Run-Run,Run-Run
+2025_07_HOU_SEA,7,REG,SEA,HOU,4,3,15,3,run,Run,"(1:10) 26-Z.Charbonnet right guard to SEA 34 for -1 yards (45-E.Speed, 90-S.Rankins). PENALTY on HOU-98-T.Settle, Unnecessary Roughness, 15 yards, enforced at SEA 34.",-0.2655766368843615,0,0.9920791983604431,Run,NA,2,NA,Run-NA,Run-Run
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_IND_LAC,7,REG,IND,LAC,1,1,1,1,pass,Pass,(14:54) (Shotgun) 17-D.Jones pass short right to 28-J.Taylor to IND 31 for 6 yards (6-D.Perryman).,0.21521054301410913,1,0.4332079589366913,NA,Run,NA,2,Pass-Run,NA
 2025_07_IND_LAC,7,REG,IND,LAC,1,2,1,2,run,Run,(14:20) (Shotgun) 28-J.Taylor up the middle to IND 35 for 4 yards (0-D.Henley; 98-O.Oweh).,0.35974955558776855,1,0.42564964294433594,Pass,Pass,1,1,Run-Pass,Pass-Run
 2025_07_IND_LAC,7,REG,IND,LAC,1,1,1,3,pass,Pass,(13:49) 17-D.Jones pass short right to 84-T.Warren pushed ob at LAC 36 for 29 yards (27-R.Mickens).,2.1071597614791244,1,0.4486531615257263,Run,Pass,2,1,Pass-Pass,Run-Pass
@@ -11717,7 +11749,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_IND_LAC,7,REG,IND,LAC,1,1,2,1,run,Run,(7:29) 28-J.Taylor left end to IND 30 for no gain (99-J.Caldwell; 90-T.Tart).,-0.586229891050607,0,0.5488050580024719,NA,Pass,NA,2,Run-Pass,NA
 2025_07_IND_LAC,7,REG,IND,LAC,1,2,2,2,pass,Pass,(6:52) (Shotgun) 17-D.Jones pass short left to 84-T.Warren to IND 36 for 6 yards (3-D.James).,-0.03826557472348213,0,0.5305875539779663,Run,Run,1,3,Pass-Run,Run-Pass
 2025_07_IND_LAC,7,REG,IND,LAC,1,3,2,3,run,Run,"(6:13) (Shotgun) 17-D.Jones Aborted. 60-T.Bortolini FUMBLES at IND 32, recovered by IND-17-D.Jones at IND 30. 17-D.Jones to IND 39 for 9 yards (98-O.Oweh).",-1.010799856390804,0,0.5408127307891846,Pass,Run,2,4,Run-Run,Pass-Run
+<<<<<<< HEAD
 2025_07_IND_LAC,7,REG,IND,LAC,1,4,2,4,run,Run,"(5:26) 28-J.Taylor right guard to IND 39 for no gain (23-T.Jefferson; 99-J.Caldwell). The Replay Official reviewed the short of the line to gain ruling, and the play was REVERSED. 28-J.Taylor right guard to IND 40 for 1 yard (23-T.Jefferson; 99-J.Caldwell).",2.2088546054437757,1,0.5202589631080627,Run,Pass,3,1,Run-Pass,Run-Run
+=======
+2025_07_IND_LAC,7,REG,IND,LAC,1,4,2,4,run,Run,(5:26) 28-J.Taylor right guard to IND 40 for 1 yard (23-T.Jefferson; 99-J.Caldwell).,2.2088546054437757,1,0.5202589631080627,Run,Pass,3,1,Run-Pass,Run-Run
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_IND_LAC,7,REG,IND,LAC,1,1,2,5,run,Pass,(5:08) (Shotgun) 17-D.Jones scrambles right tackle pushed ob at IND 47 for 7 yards (6-D.Perryman).,0.48292526812292635,1,0.5766153931617737,Run,Pass,4,2,Pass-Pass,Run-Pass
 2025_07_IND_LAC,7,REG,IND,LAC,1,2,2,6,pass,Pass,(4:26) 17-D.Jones pass incomplete deep middle to 14-A.Pierce.,-1.1575790781062096,0,0.5744791030883789,Pass,Run,1,3,Pass-Run,Pass-Pass
 2025_07_IND_LAC,7,REG,IND,LAC,1,3,2,7,run,Run,(4:20) (Shotgun) 26-A.Abdullah up the middle to LAC 39 for 14 yards (3-D.James; 29-T.Still).,2.0089592686854303,1,0.5456458330154419,Pass,Run,2,1,Run-Run,Pass-Run
@@ -11915,14 +11951,22 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_LA_JAX,7,REG,LA,JAX,1,1,1,1,pass,Pass,(13:33) 9-M.Stafford pass incomplete deep right to 17-D.Adams [41-J.Hines-Allen].,-0.5306113297119737,0,0.5224343538284302,NA,Pass,NA,2,Pass-Pass,NA
 2025_07_LA_JAX,7,REG,LA,JAX,1,2,1,2,pass,Pass,(13:28) (Shotgun) 9-M.Stafford pass short left to 84-C.Parkinson to LA 48 for 8 yards (51-V.Miller; 29-E.Murray).,0.43783021136187017,1,0.5067707300186157,Pass,Pass,1,3,Pass-Pass,Pass-Pass
 2025_07_LA_JAX,7,REG,LA,JAX,1,3,1,3,pass,Pass,(12:45) (Shotgun) 9-M.Stafford pass short right to 89-T.Higbee to JAX 45 for 7 yards (42-A.Wingard).,1.1794761861674488,1,0.5240440368652344,Pass,Run,2,1,Pass-Run,Pass-Pass
+<<<<<<< HEAD
 2025_07_LA_JAX,7,REG,LA,JAX,1,1,1,4,run,Run,(12:10) 23-K.Williams right end to JAX 39 for 6 yards (98-D.Smoot).,0.1934453749563545,1,0.5476354360580444,Pass,Pass,3,2,Run-Pass,Pass-Run
+=======
+2025_07_LA_JAX,7,REG,LA,JAX,1,1,1,4,run,Run,(12:10) 23-K.Williams right end to JAX 39 for 6 yards (99-Au.Johnson).,0.1934453749563545,1,0.5476354360580444,Pass,Pass,3,2,Run-Pass,Pass-Run
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_LA_JAX,7,REG,LA,JAX,1,2,1,5,pass,Pass,(11:29) 9-M.Stafford pass short middle to 87-D.Allen to JAX 35 for 4 yards (47-D.Gardeck).,0.4309275944251567,1,0.5691165328025818,Run,Run,1,1,Pass-Run,Run-Pass
 2025_07_LA_JAX,7,REG,LA,JAX,1,1,1,6,run,Run,(10:45) (Shotgun) 23-K.Williams right tackle to JAX 32 for 3 yards (51-V.Miller).,-0.15310140536166728,0,0.5968817472457886,Pass,Pass,2,2,Run-Pass,Pass-Run
 2025_07_LA_JAX,7,REG,LA,JAX,1,2,1,7,pass,Pass,(10:03) 9-M.Stafford pass short right to 89-T.Higbee to JAX 23 for 9 yards (29-E.Murray).,1.0186723601073027,1,0.5867412686347961,Run,Run,1,1,Pass-Run,Run-Pass
 2025_07_LA_JAX,7,REG,LA,JAX,1,1,1,8,run,Run,(9:24) 22-B.Corum right tackle to JAX 19 for 4 yards (2-J.Lewis).,-0.2158139490056783,0,0.6167829036712646,Pass,Pass,2,2,Run-Pass,Pass-Run
 2025_07_LA_JAX,7,REG,LA,JAX,1,2,1,9,pass,Pass,(8:48) 9-M.Stafford pass short right to 89-T.Higbee to JAX 16 for 3 yards (91-A.Armstead).,-0.1301839193329215,0,0.6121048927307129,Run,Pass,1,3,Pass-Pass,Run-Pass
 2025_07_LA_JAX,7,REG,LA,JAX,1,3,1,10,pass,Pass,(8:05) (Shotgun) 9-M.Stafford pass incomplete short left to 17-D.Adams.,-1.3704534283606336,0,0.5952664613723755,Pass,Pass,2,4,Pass-Pass,Pass-Pass
+<<<<<<< HEAD
 2025_07_LA_JAX,7,REG,LA,JAX,1,4,1,11,pass,Pass,(8:01) (Shotgun) 9-M.Stafford pass short right to 23-K.Williams ran ob at JAX 7 for 9 yards (30-M.Brown).,2.768722335982602,1,0.5699338912963867,Pass,Run,3,1,Pass-Run,Pass-Pass
+=======
+2025_07_LA_JAX,7,REG,LA,JAX,1,4,1,11,pass,Pass,(8:01) (Shotgun) 9-M.Stafford pass short right to 23-K.Williams pushed ob at JAX 7 for 9 yards (51-V.Miller).,2.768722335982602,1,0.5699338912963867,Pass,Run,3,1,Pass-Run,Pass-Pass
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_LA_JAX,7,REG,LA,JAX,1,1,1,12,run,Run,"(7:19) 23-K.Williams right guard to JAX 5 for -1 yards (52-D.Hamilton, 42-A.Wingard).",-0.6215655611595139,0,0.6378471851348877,Pass,Pass,4,2,Run-Pass,Pass-Run
 2025_07_LA_JAX,7,REG,LA,JAX,1,2,1,13,pass,Pass,"(6:43) 9-M.Stafford pass short middle to 15-K.Mumpfield for 5 yards, TOUCHDOWN.",1.7048968330491334,1,0.6241099238395691,Run,NA,1,NA,Pass-NA,Run-Pass
 2025_07_LA_JAX,7,REG,LA,JAX,1,1,2,1,pass,Pass,(4:53) 9-M.Stafford pass deep left to 84-C.Parkinson to JAX 30 for 23 yards (29-E.Murray).,1.5019591361051425,1,0.7581565380096436,NA,Pass,NA,1,Pass-Pass,NA
@@ -11993,7 +12037,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_LV_KC,7,REG,KC,LV,2,2,2,13,run,Run,(12:29) 10-I.Pacheco right guard to LV 30 for 3 yards (52-E.Roberts).,-0.01998471445403993,0,0.8586411476135254,Run,Pass,1,1,Run-Pass,Run-Run
 2025_07_LV_KC,7,REG,KC,LV,2,1,2,14,run,Pass,(11:52) (Shotgun) 15-P.Mahomes scrambles right end to LV 21 for 9 yards (45-D.White; 98-M.Crosby).,0.8183838567929342,1,0.8529449105262756,Run,Run,2,2,Pass-Run,Run-Pass
 2025_07_LV_KC,7,REG,KC,LV,2,2,2,15,run,Run,(11:09) (Shotgun) 10-I.Pacheco left guard to LV 18 for 3 yards (52-E.Roberts; 51-M.Koonce).,0.06632157921558246,1,0.8678569197654724,Pass,Pass,1,1,Run-Pass,Pass-Run
+<<<<<<< HEAD
 2025_07_LV_KC,7,REG,KC,LV,2,1,2,16,pass,Pass,(10:29) (Shotgun) 15-P.Mahomes pass short right to 1-X.Worthy to LV 3 for 15 yards (22-E.Stokes).,1.2855021681752987,1,0.8597068786621094,Run,Pass,2,1,Pass-Pass,Run-Pass
+=======
+2025_07_LV_KC,7,REG,KC,LV,2,1,2,16,pass,Pass,(10:29) (Shotgun) 15-P.Mahomes pass short right to 1-X.Worthy to LV 3 for 15 yards (22-E.Stokes).,1.285841481643729,1,0.8597068786621094,Run,Pass,2,1,Pass-Pass,Run-Pass
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_LV_KC,7,REG,KC,LV,2,1,2,17,pass,Pass,(9:26) 15-P.Mahomes pass incomplete short middle.,-0.5816634744405746,0,0.866945207118988,Pass,Pass,1,2,Pass-Pass,Pass-Pass
 2025_07_LV_KC,7,REG,KC,LV,2,2,2,18,pass,Pass,"(9:20) (Shotgun) 15-P.Mahomes pass short middle to 5-M.Brown for 8 yards, TOUCHDOWN.",2.2649198583094403,1,0.8582794666290283,Pass,NA,1,NA,Pass-NA,Pass-Pass
 2025_07_LV_KC,7,REG,KC,LV,2,1,3,1,run,Run,(6:32) (Shotgun) 10-I.Pacheco left guard to KC 17 for 11 yards (45-D.White; 52-E.Roberts).,0.25586118595674634,1,0.9128891825675964,NA,Pass,NA,1,Run-Pass,NA
@@ -12040,7 +12088,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_LV_KC,7,REG,KC,LV,4,1,7,4,run,Run,"(9:31) 24-B.Smith left end to KC 45 for -1 yards (49-C.Snowden, 52-E.Roberts).",-0.7775030571501702,0,0.9999103546142578,Run,Run,3,2,Run-Run,Run-Run
 2025_07_LV_KC,7,REG,KC,LV,4,2,7,5,run,Run,(8:48) 24-B.Smith right end to KC 45 for no gain (96-J.Laulu).,-0.8415406867861748,0,0.9998819828033447,Run,Run,1,3,Run-Run,Run-Run
 2025_07_LV_KC,7,REG,KC,LV,4,3,7,6,run,Run,(8:05) (Shotgun) 24-B.Smith up the middle to 50 for 5 yards (49-C.Snowden; 52-E.Roberts).,-0.9863865359220654,0,0.9998698234558105,Run,NA,2,NA,Run-NA,Run-Run
+<<<<<<< HEAD
 2025_07_LV_KC,7,REG,KC,LV,4,1,8,1,run,Run,(7:04) 24-B.Smith left guard to LV 8 for 3 yards (45-D.White; 20-I.Pola-Mao). LV-20-I.Pola-Mao was injured during the play.,-0.1764914972591214,0,0.9998997449874878,NA,Run,NA,2,Run-Run,NA
+=======
+2025_07_LV_KC,7,REG,KC,LV,4,1,8,1,run,Run,(7:04) (Shotgun) 24-B.Smith left guard to LV 8 for 3 yards (45-D.White; 20-I.Pola-Mao). LV-20-I.Pola-Mao was injured during the play.,-0.1764914972591214,0,0.9998997449874878,NA,Run,NA,2,Run-Run,NA
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_LV_KC,7,REG,KC,LV,4,2,8,2,run,Run,"(6:21) (Shotgun) 24-B.Smith left tackle to LV 9 for -1 yards (9-T.Wilson, 27-T.McCollum).",-0.9976066565723158,0,0.9998881816864014,Run,Run,1,3,Run-Run,Run-Run
 2025_07_LV_KC,7,REG,KC,LV,4,3,8,3,run,Run,(5:36) (Shotgun) 24-B.Smith right guard to LV 5 for 4 yards (52-E.Roberts; 45-D.White).,-0.9011932809953578,0,0.9998575448989868,Run,Run,2,4,Run-Run,Run-Run
 2025_07_LV_KC,7,REG,KC,LV,4,4,8,4,run,Run,(4:52) (Shotgun) 24-B.Smith up the middle to LV 4 for 1 yard (45-D.White).,-2.672767882992048,0,0.9998272061347961,Run,NA,3,NA,Run-NA,Run-Run
@@ -12650,8 +12702,13 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_PHI_MIN,7,REG,PHI,MIN,2,2,4,2,pass,Pass,"(5:34) (No Huddle, Shotgun) 1-J.Hurts sacked at PHI 16 for -7 yards (55-E.Wilson). Penalty on PHI-26-S.Barkley, Offensive Holding, declined.",-1.2588527728803456,0,0.7725949883460999,Run,Pass,1,3,Pass-Pass,Run-Pass
 2025_07_PHI_MIN,7,REG,PHI,MIN,2,3,4,3,pass,Pass,(5:11) (Shotgun) 1-J.Hurts pass short left to 88-D.Goedert to PHI 27 for 11 yards (44-J.Metellus; 8-J.Okudah).,-0.11411911388859153,0,0.7514718174934387,Pass,NA,2,NA,Pass-NA,Pass-Pass
 2025_07_PHI_MIN,7,REG,PHI,MIN,2,1,5,1,pass,Pass,(:59) (Shotgun) 1-J.Hurts pass short middle to 6-D.Smith to PHI 22 for 6 yards (15-D.Turner).,-0.09970598173094913,0,0.7674582600593567,NA,Pass,NA,2,Pass-Pass,NA
+<<<<<<< HEAD
 2025_07_PHI_MIN,7,REG,PHI,MIN,2,2,5,2,pass,Pass,"(:42) (No Huddle, Shotgun) 1-J.Hurts pass short right to 6-D.Smith to PHI 38 for 16 yards (7-B.Murphy).",0.5614965682034381,1,0.7730550765991211,Pass,Pass,1,1,Pass-Pass,Pass-Pass
 2025_07_PHI_MIN,7,REG,PHI,MIN,2,1,5,3,pass,Pass,(:34) (Shotgun) 1-J.Hurts pass incomplete short middle to 11-A.Brown (22-H.Smith).,-0.26328737946460024,0,0.8028095960617065,Pass,Pass,2,2,Pass-Pass,Pass-Pass
+=======
+2025_07_PHI_MIN,7,REG,PHI,MIN,2,2,5,2,pass,Pass,"(:42) (No Huddle, Shotgun) 1-J.Hurts pass short right to 6-D.Smith to PHI 38 for 16 yards (7-B.Murphy).",0.5305966301821172,1,0.7730550765991211,Pass,Pass,1,1,Pass-Pass,Pass-Pass
+2025_07_PHI_MIN,7,REG,PHI,MIN,2,1,5,3,pass,Pass,(:33) (Shotgun) 1-J.Hurts pass incomplete short middle to 11-A.Brown (22-H.Smith).,-0.23238744144327939,0,0.8028095960617065,Pass,Pass,2,2,Pass-Pass,Pass-Pass
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_PHI_MIN,7,REG,PHI,MIN,2,2,5,4,pass,Pass,(:29) (Shotgun) 1-J.Hurts sacked at PHI 35 for -3 yards (sack split by 15-D.Turner and 93-J.Allen).,-0.7837268783478066,0,0.7891546487808228,Pass,NA,1,NA,Pass-NA,Pass-Pass
 2025_07_PHI_MIN,7,REG,PHI,MIN,3,1,6,1,pass,Pass,(8:57) (Shotgun) 1-J.Hurts pass short left to 6-D.Smith to PHI 21 for 5 yards (51-B.Cashman).,-0.061292183585464954,0,0.6701598763465881,NA,Pass,NA,2,Pass-Pass,NA
 2025_07_PHI_MIN,7,REG,PHI,MIN,3,2,6,2,pass,Pass,"(8:17) 74-F.Johnson reported in as eligible. 1-J.Hurts pass deep middle to 6-D.Smith for 79 yards, TOUCHDOWN.",6.583969845436513,1,0.6747050285339355,Pass,NA,1,NA,Pass-NA,Pass-Pass
@@ -12672,9 +12729,15 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_PHI_MIN,7,REG,PHI,MIN,4,1,8,7,pass,Pass,"(6:40) (Shotgun) 1-J.Hurts pass deep middle to 11-A.Brown for 26 yards, TOUCHDOWN. ** Injury Update: PHI-26-S.Barkley has returned to the game.",2.748622986546252,1,0.8008177280426025,Pass,NA,1,NA,Pass-NA,Pass-Pass
 2025_07_PHI_MIN,7,REG,PHI,MIN,4,1,9,1,run,Run,(1:52) 74-F.Johnson reported in as eligible. 26-S.Barkley up the middle to PHI 44 for 1 yard (44-J.Metellus).,-0.2902503567747772,0,0.972934901714325,NA,Pass,NA,2,Run-Pass,NA
 2025_07_PHI_MIN,7,REG,PHI,MIN,4,2,9,2,pass,Pass,(1:48) (Shotgun) 1-J.Hurts pass incomplete short left to 11-A.Brown.,-0.44310877879615873,0,0.9717850685119629,Run,Pass,1,3,Pass-Pass,Run-Pass
+<<<<<<< HEAD
 2025_07_PHI_MIN,7,REG,PHI,MIN,4,3,9,3,pass,Pass,(1:45) (Shotgun) 1-J.Hurts pass deep left to 11-A.Brown to MIN 11 for 45 yards (7-B.Murphy; 2-I.Rodgers).,3.688479993783403,1,0.9649547338485718,Pass,Run,2,1,Pass-Run,Pass-Pass
 2025_07_PHI_MIN,7,REG,PHI,MIN,4,1,9,4,run,Run,(1:36) 74-F.Johnson reported in as eligible. 26-S.Barkley up the middle to MIN 14 for -3 yards (50-L.Rodriguez).,-1.5753093078383245,0,0.9870872497558594,Pass,Run,3,2,Run-Run,Pass-Run
 2025_07_PHI_MIN,7,REG,PHI,MIN,4,2,9,5,run,Run,(1:33) 74-F.Johnson reported in as eligible. 26-S.Barkley up the middle to MIN 14 for no gain (51-B.Cashman; 97-J.Hargrave).,-0.559153622132726,0,0.9888189435005188,Run,Run,1,3,Run-Run,Run-Run
+=======
+2025_07_PHI_MIN,7,REG,PHI,MIN,4,3,9,3,pass,Pass,(1:45) (Shotgun) 1-J.Hurts pass deep left to 11-A.Brown to MIN 11 for 45 yards (7-B.Murphy; 2-I.Rodgers).,3.7172239965875633,1,0.9649547338485718,Pass,Run,2,1,Pass-Run,Pass-Pass
+2025_07_PHI_MIN,7,REG,PHI,MIN,4,1,9,4,run,Run,(1:35) 74-F.Johnson reported in as eligible. 26-S.Barkley up the middle to MIN 14 for -3 yards (50-L.Rodriguez).,-1.60345113708172,0,0.9885196089744568,Pass,Run,3,2,Run-Run,Pass-Run
+2025_07_PHI_MIN,7,REG,PHI,MIN,4,2,9,5,run,Run,(1:32) 74-F.Johnson reported in as eligible. 26-S.Barkley up the middle to MIN 14 for no gain (51-B.Cashman; 97-J.Hargrave).,-0.5597557956934907,0,0.9888189435005188,Run,Run,1,3,Run-Run,Run-Run
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_PHI_MIN,7,REG,PHI,MIN,4,3,9,6,run,Run,(:47) 1-J.Hurts up the middle to MIN 19 for -5 yards (58-J.Greenard).,-0.2627231498481706,0,0.9932235479354858,Run,NA,2,NA,Run-NA,Run-Run
 2025_07_PIT_CIN,7,REG,CIN,PIT,1,1,1,1,run,Run,(10:45) (Shotgun) 30-C.Brown up the middle to CIN 29 for 2 yards (97-Ca.Heyward).,-0.37489548907615244,0,0.38586947321891785,NA,Pass,NA,2,Run-Pass,NA
 2025_07_PIT_CIN,7,REG,CIN,PIT,1,2,1,2,pass,Pass,(10:07) (Shotgun) 16-J.Flacco sacked at CIN 23 for -6 yards (95-K.Benton).,-1.95330106979236,0,0.37646904587745667,Run,Pass,1,3,Pass-Pass,Run-Pass
@@ -12855,7 +12918,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_TB_DET,7,REG,DET,TB,4,1,10,9,pass,Pass,(14:33) 16-J.Goff pass short right to 11-K.Raymond to TB 47 for 2 yards (54-L.David; 27-Z.McCollum).,-0.43562762858346105,0,0.9426160454750061,Run,Run,4,2,Pass-Run,Run-Pass
 2025_07_TB_DET,7,REG,DET,TB,4,2,10,10,run,Run,(13:56) (Shotgun) 5-D.Montgomery up the middle to TB 45 for 2 yards (8-S.Dennis).,-0.6243820651434362,0,0.9341752529144287,Pass,Pass,1,3,Run-Pass,Pass-Run
 2025_07_TB_DET,7,REG,DET,TB,4,3,10,11,pass,Pass,(13:16) (Shotgun) 16-J.Goff pass incomplete short left to 14-A.St. Brown.,-1.7505097622051835,0,0.93326568603515625,Run,NA,2,NA,Pass-NA,Run-Pass
+<<<<<<< HEAD
 2025_07_TB_DET,7,REG,DET,TB,4,1,11,1,run,Run,(11:31) 0-J.Gibbs right tackle to TB 40 for no gain (50-V.Vea; 0-Y.Diaby). TB-5-H.Reddick was injured during the play.,-0.545450400095433,0,0.9619872570037842,NA,Pass,NA,2,Run-Pass,NA
+=======
+2025_07_TB_DET,7,REG,DET,TB,4,1,11,1,run,Run,(11:31) (Shotgun) 0-J.Gibbs right tackle to TB 40 for no gain (50-V.Vea; 0-Y.Diaby). TB-5-H.Reddick was injured during the play.,-0.545450400095433,0,0.9619872570037842,NA,Pass,NA,2,Run-Pass,NA
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_TB_DET,7,REG,DET,TB,4,2,11,2,pass,Pass,(11:12) 16-J.Goff sacked at TB 40 for 0 yards (98-A.Nelson).,-0.8208333302754909,0,0.9581867456436157,Run,Pass,1,3,Pass-Pass,Run-Pass
 2025_07_TB_DET,7,REG,DET,TB,4,3,11,3,pass,Pass,(10:28) (Shotgun) 16-J.Goff pass incomplete deep middle to 1-J.Williams.,-1.649699065429266,0,0.9540262818336487,Pass,NA,2,NA,Pass-NA,Pass-Pass
 2025_07_TB_DET,7,REG,DET,TB,4,1,12,1,run,Run,(4:24) 5-D.Montgomery right tackle to DET 14 for 1 yard (90-L.Hall).,-0.46774598490446806,0,0.9983198046684265,NA,Run,NA,2,Run-Run,NA
@@ -13044,7 +13111,11 @@ game_id,week,season_type,posteam,defteam,qtr,down,drive_no,play_no,play_type,pla
 2025_07_WAS_DAL,7,REG,WAS,DAL,3,3,10,4,pass,Pass,(3:34) (Shotgun) 8-M.Mariota pass incomplete deep right to 83-J.Lane.,-1.144178209709935,0,0.0012563110794872046,Run,Run,2,1,Pass-Run,Run-Pass
 2025_07_WAS_DAL,7,REG,WAS,DAL,3,1,10,5,run,Run,"(3:20) (No Huddle, Shotgun) 8-M.Mariota right tackle to DAL 3 for 9 yards (26-D.Bland).",0.9179005874320865,1,0.0014834321336820722,Pass,Pass,3,2,Run-Pass,Pass-Run
 2025_07_WAS_DAL,7,REG,WAS,DAL,3,2,10,6,pass,Pass,"(2:42) (No Huddle, Shotgun) 8-M.Mariota pass incomplete short left to 87-J.Bates (42-J.Clowney).",-0.47772390814498067,0,0.0023629788774996996,Run,Run,1,3,Pass-Run,Run-Pass
+<<<<<<< HEAD
 2025_07_WAS_DAL,7,REG,WAS,DAL,3,3,10,7,run,Run,"(2:39) (No Huddle, Shotgun) 73-T.Scott reported in as eligible. 36-C.Rodriguez left tackle for 3 yards, TOUCHDOWN. DAL-95-K.Clark was injured during the play.",1.374751269351691,1,0.0018251175060868263,Pass,NA,2,NA,Run-NA,Pass-Run
+=======
+2025_07_WAS_DAL,7,REG,WAS,DAL,3,3,10,7,run,Run,"(2:39) (Shotgun) 73-T.Scott reported in as eligible. 36-C.Rodriguez left tackle for 3 yards, TOUCHDOWN. DAL-95-K.Clark was injured during the play.",1.374751269351691,1,0.0018251175060868263,Pass,NA,2,NA,Run-NA,Pass-Run
+>>>>>>> 1591a500f108bb0f8e676b83209d30db1b82cefb
 2025_07_WAS_DAL,7,REG,WAS,DAL,4,1,11,1,pass,Pass,(12:39) (Shotgun) 8-M.Mariota pass incomplete short left to 19-C.Moore (20-K.Elam) [50-S.James].,-0.5402689822949469,0,0.004339884035289288,NA,Pass,NA,2,Pass-Pass,NA
 2025_07_WAS_DAL,7,REG,WAS,DAL,4,2,11,2,pass,Pass,"(12:34) (No Huddle, Shotgun) 8-M.Mariota pass short right to 86-Z.Ertz to DAL 45 for 27 yards (59-K.Murray).",2.2958435100736097,1,0.003717854619026184,Pass,Pass,1,1,Pass-Pass,Pass-Pass
 2025_07_WAS_DAL,7,REG,WAS,DAL,4,1,11,3,pass,Pass,"(11:56) (No Huddle, Shotgun) 8-M.Mariota sacked at DAL 49 for -4 yards (42-J.Clowney).",-1.0828058699844405,0,0.005359682720154524,Pass,Pass,2,2,Pass-Pass,Pass-Pass

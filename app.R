@@ -143,9 +143,219 @@ seq_table <- function(play_data, pbp_data){
   return(new_table)
 }
 
+calculate_sequence_frequencies <- function(play_data, side = 'Off') {
+  
+  logos <- teams_colors_logos %>% 
+    select(team_abbr,team_name,
+           team_color, team_color2, team_color3, team_color4,
+           team_logo_wikipedia, team_logo_espn, team_wordmark)
+  
+  if (side == 'Off') {
+    # Calculate total plays by team and sequence type
+    sequence_counts <- play_data %>%
+      filter(!is.na(t_last_play)) %>%  # Only plays that have a next play
+      group_by(posteam, playType, t_last_play) %>%
+      summarise(sequence_count = n(),
+                epa_play = mean(epa),
+                SR = mean(success),
+                .groups = 'drop') %>%
+      mutate(sequence = paste(playType, t_last_play, sep = "-"))
+    
+    # Calculate total plays by team and first play type for percentages
+    total_by_first_play <- play_data %>%
+      # filter(!is.na(t_next_play)) %>%
+      group_by(posteam, playType) %>%
+      summarise(total_first_plays = n(),
+                first_epa_play = mean(epa),
+                first_SR = mean(success),
+                .groups = 'drop') %>% 
+      mutate(play_freq = total_first_plays/sum(total_first_plays))
+    
+    first_LA <- play_data %>%
+      group_by(playType) %>%
+      summarise(first_LA_epa_play = mean(epa),
+                first_LA_SR = mean(success),
+                .groups = 'drop')
+    
+    second_LA <- play_data %>%
+      group_by(playType) %>%
+      summarise(second_LA_epa_play = mean(epa),
+                second_LA_SR = mean(success),
+                .groups = 'drop')
+    
+    # Join and calculate frequencies
+    frequency_data <- sequence_counts %>%
+      merge(total_by_first_play,
+            by.x = c('posteam','t_last_play'),
+            by.y = c('posteam','playType')) %>%
+      merge(first_LA, by.x = c("t_last_play"), by.y = c("playType")) %>%
+      left_join(second_LA, by = c("playType")) %>%
+      group_by(posteam,t_last_play) %>% 
+      mutate(frequency = sequence_count / sum(sequence_count)) %>% 
+      group_by(sequence) %>%
+      mutate(first_epa_rk = dense_rank(-first_epa_play),
+             first_SR_rk = dense_rank(-first_SR),
+             second_epa_rk = dense_rank(-epa_play),
+             second_SR_rk = dense_rank(-SR)) %>% 
+      merge(logos, by.x = 'posteam',by.y = 'team_abbr')
+  } else {
+    # Calculate total plays by team and sequence type
+    sequence_counts <- play_data %>%
+      filter(!is.na(t_last_play)) %>%  # Only plays that have a next play
+      group_by(defteam, playType, t_last_play) %>%
+      summarise(sequence_count = n(),
+                epa_play = mean(epa),
+                SR = mean(success),
+                .groups = 'drop') %>%
+      mutate(sequence = paste(playType, t_last_play, sep = "-"))
+    
+    # Calculate total plays by team and first play type for percentages
+    total_by_first_play <- play_data %>%
+      # filter(!is.na(t_next_play)) %>%
+      group_by(defteam, playType) %>%
+      summarise(total_first_plays = n(),
+                first_epa_play = mean(epa),
+                first_SR = mean(success),
+                .groups = 'drop') %>% 
+      mutate(play_freq = total_first_plays/sum(total_first_plays))
+    
+    first_LA <- play_data %>%
+      group_by(playType) %>%
+      summarise(first_LA_epa_play = mean(epa),
+                first_LA_SR = mean(success),
+                .groups = 'drop')
+    
+    second_LA <- play_data %>%
+      group_by(playType) %>%
+      summarise(second_LA_epa_play = mean(epa),
+                second_LA_SR = mean(success),
+                .groups = 'drop')
+    
+    # Join and calculate frequencies
+    frequency_data <- sequence_counts %>%
+      merge(total_by_first_play,
+            by.x = c('defteam','t_last_play'),
+            by.y = c('defteam','playType')) %>%
+      merge(first_LA, by.x = c("t_last_play"), by.y = c("playType")) %>%
+      left_join(second_LA, by = c("playType")) %>%
+      group_by(defteam,t_last_play) %>% 
+      mutate(frequency = sequence_count / sum(sequence_count)) %>%
+      group_by(sequence) %>%
+      mutate(first_epa_rk = dense_rank(-first_epa_play),
+             first_SR_rk = dense_rank(-first_SR),
+             second_epa_rk = dense_rank(-epa_play),
+             second_SR_rk = dense_rank(-SR)) %>% 
+      merge(logos, by.x = 'defteam',by.y = 'team_abbr')
+  }
+  
+  return(frequency_data)
+}
+
+create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
+  
+  freq_data <- data %>% 
+    filter(posteam == off_team)
+  
+  logo_data <- data.frame(
+    x = 1.5,
+    y = 1.5,
+    team = off_team
+  )
+  
+  team_name <- freq_data %>% pull(team_name) %>% unique()
+  primary <- freq_data %>% pull(team_color) %>% unique()
+  secondary <- freq_data %>% pull(team_color2) %>% unique()
+  third <- freq_data %>% pull(team_color3) %>% unique()
+  
+  # Process data for all teams
+  tree_data <- freq_data %>%
+    mutate(
+      first_play = t_last_play,
+      second_play = playType,
+      x_root = ifelse(first_play == "Pass", 0.5, 2.5),
+      x_end = case_when(
+        first_play == "Pass" & second_play == "Pass" ~ 0,
+        first_play == "Pass" & second_play == "Run" ~ 1,
+        first_play == "Run" & second_play == "Pass" ~ 2,
+        first_play == "Run" & second_play == "Run" ~ 3,
+      ),
+      y_root = 2,
+      y_end = 1,
+      # Compact labels for space efficiency
+      edge_label = paste0(round(frequency * 100), "%"),
+      first_epa_diff = first_epa_play - first_LA_epa_play,
+      epa_diff = epa_play - second_LA_epa_play,
+      # Create compact node labels
+      root_label = paste0(first_play, "\nEPA: ", round(first_epa_play, 2)," (",first_epa_rk,")", 
+                          "\nSR: ", round(first_SR * 100), "%", " (",first_SR_rk,")"),
+      end_label = paste0(second_play, "\nEPA: ", round(epa_play, 2), " (",second_epa_rk,")",
+                         "\nSR: ", round(SR * 100), "%", " (",second_SR_rk,")")
+    )
+  
+  # Create the plot with facets
+  p <- ggplot(tree_data) +
+    # Background 
+    annotate("rect", xmin = -1.75, xmax = 4.75, ymin = 0, ymax = 2.6,fill = third, alpha = .25) +
+    # Caption
+    annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.65, y = .45, size = 6.5, parse = TRUE) +
+    # Team Wordmark
+    geom_nfl_wordmarks( data = logo_data, aes(x = x, y = y, team_abbr = team), width = 0.75, alpha = 0.7) +
+    # Frequency Connectors
+    geom_segment( aes(x = x_root, y = y_root, xend = x_end, yend = y_end, linewidth = 5, color = frequency)) +
+    # Frequency Label
+    geom_label(
+      aes(x = (x_root + x_end) / 2, y = (y_root + y_end) / 2, label = edge_label),
+      size = 6.5, fontface = "bold", color = "black", fill = 'white') +
+    # Root nodes (Pass/Run starting points)
+    geom_label(
+      data = tree_data %>% distinct(posteam, first_play, x_root, y_root, 
+                                    first_epa_play, first_SR, first_epa_diff, root_label),
+      aes(x = x_root, y = y_root, fill = first_epa_diff, label = root_label),
+      size = 6.5, label.padding = unit(0.3, "lines"), 
+      label.r = unit(0.2, "lines"), fontface = "bold"
+    ) +
+    # Outcome nodes (second play results)
+    geom_label(
+      aes(x = x_end, y = y_end, fill = epa_diff, label = end_label),
+      size = 6.5,label.padding = unit(0.3, "lines"),
+      label.r = unit(0.2, "lines"), fontface = "bold"
+    ) +
+    # Color scales
+    scale_color_gradient2(
+      low = '#3B4CC0', high = '#B40426', mid = "#DDDDDD", 
+      midpoint = 0.5, name = "Frequency"
+    ) +
+    scale_fill_gradient2(
+      low = '#3B4CC0', high = '#B40426', mid = "#DDDDDD", 
+      name = "EPA vs League Avg"
+    ) +
+    
+    # Labels and theming
+    labs(
+      title = paste0(team_name, ' Offensive Play Calling Tendancies'),
+      subtitle = subtitle,
+      # caption = "@arieizen | data: nflfastR"
+    ) +
+    theme_void() +
+    theme(
+      plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary),
+      plot.subtitle = element_text(size = 20, hjust = 0.5),
+      plot.caption = element_text(size = 14,face = "bold"),
+      legend.position = "none",
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA),
+      panel.spacing = unit(0.1, "lines"),
+      panel.border = element_rect(colour = secondary, fill=NA, linewidth=2.5)
+    ) +
+    coord_cartesian(xlim = c(-0.75, 3.75),ylim = c(0.5, 2.5),clip = "off")
+  
+  return(p)
+}
+
 load_app_data <- function(){
   list(all_seq = read_csv('All Seq.csv', show_col_types = F),
-       pbp = read_csv('NFL pbp.csv', show_col_types = F)
+       pbp = read_csv('NFL pbp.csv', show_col_types = F) %>% 
+         mutate(Run = if_else(playType == 'Run',1,0))
   )
 }
 # Define UI for application that draws a histogram
@@ -244,15 +454,20 @@ ui <- navbarPage(
           column(12,gt_output('overview'))
         )
     ),
-  tabPanel("Drill In Analysis",
+  tabPanel("Play Calling Analysis",
            fluidRow(
+             column(2,selectInput('tm', 'Select Team', 
+                                  choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
+                                  selected = 'ARI')),
              column(2,sliderInput("week_2", "Week Number:", min = 1, max = 22, value = c(1,18))),
              column(2,sliderInput("wp_2", "Team Win %:", min = 0, max = 100, value = c(20,80))),
              column(1,checkboxGroupInput('down_2', 'Down:', choices = 1:4, selected = 1:4, inline = T)),
-             column(1,checkboxGroupInput('qtr_2', 'Quarter:', choices = c(1,2,3,4,'OT' = 5), selected = 1:5, inline = T)),
-             column(2,selectInput('first', 'First Play:', choices = c('Run','Pass'), selected = 'Pass')),
-             column(2,selectInput('second', 'Second Play', choices = c('Run','Pass'), selected = 'Pass'))
-           ))
+             column(1,checkboxGroupInput('qtr_2', 'Quarter:', choices = c(1,2,3,4,'OT' = 5), selected = 1:5, inline = T))
+           ),
+           fluidRow(
+          column(12,plotOutput('tree', height = "85vh"))
+        )
+      )
   )
 
 # Define server logic required to draw a histogram
@@ -285,7 +500,7 @@ server <- function(input, output) {
     table_split <- split_data_for_display(play_table) %>% 
       relocate(rank_2, .before = wordmark_2)
     
-    tab_subtitle <- paste0("2025 Season • Weeks ", min(input$week), "-", max(input$week), 
+    tab_subtitle <- paste0("2025 Season • Weeks ", min(pbp$week), "-", max(pbp$week), 
                           " • Win Probability ", min(input$wp), "%-", max(input$wp), "%",
                           if(length(input$down) < 4) paste0(" • Downs: ", paste(input$down, collapse=", ")) else "",
                           if(length(input$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", input$qtr), collapse=", ")) else "")
@@ -465,139 +680,161 @@ server <- function(input, output) {
                                                RP_SR_2, RP_EPA_2, RR_SR_2, RR_EPA_2))
   })
   
-  # Table on Drill In Page
-  # Should show epa/play and SR for both first play and second play of selected
-  output$raw_data <- renderDT({
+  # Play Calling Tendancies
+  output$tree <- renderPlot({
     
-    seq_table <- function(){
-      t <- read_csv('All Seq.csv') %>% 
-        filter(between(week,as.numeric(min(input$week_2)),max(input$week_2)),
-               between(wp,min(input$wp_2)/100,max(input$wp_2)/100),
-               down %in% input$down_2,
-               qtr %in% input$qtr_2,
-               ((playType == input$first & t_next_play == input$second) |
-               (t_last_play == input$first & playType == input$second)))
-      
-      seq_chart <- t %>% 
-        group_by(posteam,seq_group) %>% 
-        reframe(epa_per_play = mean(epa),
-                success_rate = mean(success)) %>% 
-        merge(teams_colors_logos %>% select(team_abbr,team_color, team_color2,team_color3, team_wordmark,team_logo_wikipedia),
-              by.x = 'posteam',by.y = 'team_abbr') %>% 
-        unique()
-      
-      whole_totals <- t %>% 
-        group_by(posteam) %>% 
-        mutate(total_epa = mean(epa),
-               total_sr = mean(success)) 
-      
-      
-      # print(seq_chart)
-      new_table <- c()
-      for (k in 1:32) {
-        tms <- seq_chart %>% pull(posteam) %>% unique()
-        tm <- tms[k]
-        primary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color) %>% unique() 
-        secondary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color2) %>% unique() 
-        tertiary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color3) %>% unique()
-        wordmark <- seq_chart %>% filter(posteam == tm) %>% pull(team_wordmark) %>% unique()
-        logo <- seq_chart %>% filter(posteam == tm) %>% pull(team_logo_wikipedia) %>% unique()
-        
-        
-        # Get Pass-Pass Metrics
-        SR <- whole_totals %>% 
-          filter(posteam == tm) %>% 
-          pull(total_sr) #%>% 
-        # percent(accuracy = 0.1)
-        EPA <- whole_totals %>% 
-          filter(posteam == tm) %>% 
-          pull(total_epa) %>% 
-          round(3)
-        
-        # Get Pass-Pass Metrics
-        PP_SR <- seq_chart %>% 
-          filter(posteam == tm & seq_group == 'Pass-Pass') %>% 
-          pull(success_rate) #%>% 
-        # percent(accuracy = 0.1)
-        PP_EPA <- seq_chart %>% 
-          filter(posteam == tm & seq_group == 'Pass-Pass') %>% 
-          pull(epa_per_play) %>% 
-          round(3)
-        
-        # Get Pass-Run Metrics
-        PR_SR <- seq_chart %>% 
-          filter(posteam == tm & seq_group == 'Pass-Run') %>% 
-          pull(success_rate) #%>% 
-        # percent(accuracy = 0.1)
-        PR_EPA <- seq_chart %>% 
-          filter(posteam == tm & seq_group == 'Pass-Run') %>% 
-          pull(epa_per_play) %>% 
-          round(3)
-        
-        # Get Run-Pass Metrics
-        RP_SR <- seq_chart %>% 
-          filter(posteam == tm & seq_group == 'Run-Pass') %>% 
-          pull(success_rate) #%>% 
-        # percent(accuracy = 0.1)
-        RP_EPA <- seq_chart %>% 
-          filter(posteam == tm & seq_group == 'Run-Pass') %>% 
-          pull(epa_per_play) %>% 
-          round(3)
-        
-        # Get Run-Run Metrics
-        RR_SR <- seq_chart %>% 
-          filter(posteam == tm & seq_group == 'Run-Run') %>% 
-          pull(success_rate) #%>% 
-        # percent(accuracy = 0.1)
-        RR_EPA <- seq_chart %>% 
-          filter(posteam == tm & seq_group == 'Run-Run') %>% 
-          pull(epa_per_play) %>% 
-          round(3)
-        
-        team_row <- data.frame(
-          posteam = tm,
-          primary, 
-          secondary,
-          tertiary,
-          wordmark,
-          logo,
-          EPA,
-          SR,
-          PP_EPA,
-          PP_SR,
-          PR_EPA,
-          PR_SR,
-          RP_EPA,
-          RP_SR,
-          RR_EPA,
-          RR_SR
-        )
-        
-        new_table <- bind_rows(new_table, team_row)
-      }
-      
-      return(new_table)
-    }
+    tree_data <- app_data$pbp %>% 
+      filter(between(week,as.numeric(min(input$week_2)),max(input$week_2)),
+             between(wp,min(input$wp_2)/100,max(input$wp_2)/100),
+             down %in% input$down_2,
+             qtr %in% input$qtr_2)
     
-    dt <- seq_table() %>% 
-      rename(
-        'Pass-Pass EPA/Play'= PP_EPA,
-        'Pass-Pass Success Rate'= PP_SR,
-        'Pass-Run EPA/Play'= PR_EPA,
-        'Pass-Run SR'= PR_SR,
-        'Run-Pass EPA/Play'= RP_EPA,
-        'Run-Pass SR'= RP_SR,
-        'Run-Run EPA/Play'= RR_EPA,
-        'Run-Run SR'= RR_SR,
-      ) %>% 
-      select(-posteam,-primary,-secondary,-tertiary,-wordmark) %>% 
-      gt() %>% 
-      
+    subtitle <- paste0("2025 Season • Weeks ", min(tree_data$week), "-", max(tree_data$week), 
+                       " • Win Probability ", min(input$wp_2), "%-", max(input$wp_2), "%",
+                       if(length(input$down_2) < 4) paste0(" • Downs: ", paste(input$down_2, collapse=", ")) else "",
+                       if(length(input$qtr_2) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", input$qtr_2), collapse=", ")) else "")
     
-    return(dt)
+    off_freq_data <- calculate_sequence_frequencies(tree_data,side = 'Off')
+    tree_plot <- create_off_decision_trees(off_freq_data,subtitle, off_team = input$tm)
     
+    tree_plot
+  })
   
-  },escape = FALSE, options = list(pageLength = 10)) 
+  # Table on Drill In Page
+################################################################################  
+  # # Should show epa/play and SR for both first play and second play of selected
+  # output$raw_data <- renderDT({
+  #   
+  #   seq_table <- function(){
+  #     t <- read_csv('All Seq.csv') %>% 
+  #       filter(between(week,as.numeric(min(input$week_2)),max(input$week_2)),
+  #              between(wp,min(input$wp_2)/100,max(input$wp_2)/100),
+  #              down %in% input$down_2,
+  #              qtr %in% input$qtr_2,
+  #              ((playType == input$first & t_next_play == input$second) |
+  #              (t_last_play == input$first & playType == input$second)))
+  #     
+  #     seq_chart <- t %>% 
+  #       group_by(posteam,seq_group) %>% 
+  #       reframe(epa_per_play = mean(epa),
+  #               success_rate = mean(success)) %>% 
+  #       merge(teams_colors_logos %>% select(team_abbr,team_color, team_color2,team_color3, team_wordmark,team_logo_wikipedia),
+  #             by.x = 'posteam',by.y = 'team_abbr') %>% 
+  #       unique()
+  #     
+  #     whole_totals <- t %>% 
+  #       group_by(posteam) %>% 
+  #       mutate(total_epa = mean(epa),
+  #              total_sr = mean(success)) 
+  #     
+  #     
+  #     # print(seq_chart)
+  #     new_table <- c()
+  #     for (k in 1:32) {
+  #       tms <- seq_chart %>% pull(posteam) %>% unique()
+  #       tm <- tms[k]
+  #       primary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color) %>% unique() 
+  #       secondary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color2) %>% unique() 
+  #       tertiary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color3) %>% unique()
+  #       wordmark <- seq_chart %>% filter(posteam == tm) %>% pull(team_wordmark) %>% unique()
+  #       logo <- seq_chart %>% filter(posteam == tm) %>% pull(team_logo_wikipedia) %>% unique()
+  #       
+  #       
+  #       # Get Pass-Pass Metrics
+  #       SR <- whole_totals %>% 
+  #         filter(posteam == tm) %>% 
+  #         pull(total_sr) #%>% 
+  #       # percent(accuracy = 0.1)
+  #       EPA <- whole_totals %>% 
+  #         filter(posteam == tm) %>% 
+  #         pull(total_epa) %>% 
+  #         round(3)
+  #       
+  #       # Get Pass-Pass Metrics
+  #       PP_SR <- seq_chart %>% 
+  #         filter(posteam == tm & seq_group == 'Pass-Pass') %>% 
+  #         pull(success_rate) #%>% 
+  #       # percent(accuracy = 0.1)
+  #       PP_EPA <- seq_chart %>% 
+  #         filter(posteam == tm & seq_group == 'Pass-Pass') %>% 
+  #         pull(epa_per_play) %>% 
+  #         round(3)
+  #       
+  #       # Get Pass-Run Metrics
+  #       PR_SR <- seq_chart %>% 
+  #         filter(posteam == tm & seq_group == 'Pass-Run') %>% 
+  #         pull(success_rate) #%>% 
+  #       # percent(accuracy = 0.1)
+  #       PR_EPA <- seq_chart %>% 
+  #         filter(posteam == tm & seq_group == 'Pass-Run') %>% 
+  #         pull(epa_per_play) %>% 
+  #         round(3)
+  #       
+  #       # Get Run-Pass Metrics
+  #       RP_SR <- seq_chart %>% 
+  #         filter(posteam == tm & seq_group == 'Run-Pass') %>% 
+  #         pull(success_rate) #%>% 
+  #       # percent(accuracy = 0.1)
+  #       RP_EPA <- seq_chart %>% 
+  #         filter(posteam == tm & seq_group == 'Run-Pass') %>% 
+  #         pull(epa_per_play) %>% 
+  #         round(3)
+  #       
+  #       # Get Run-Run Metrics
+  #       RR_SR <- seq_chart %>% 
+  #         filter(posteam == tm & seq_group == 'Run-Run') %>% 
+  #         pull(success_rate) #%>% 
+  #       # percent(accuracy = 0.1)
+  #       RR_EPA <- seq_chart %>% 
+  #         filter(posteam == tm & seq_group == 'Run-Run') %>% 
+  #         pull(epa_per_play) %>% 
+  #         round(3)
+  #       
+  #       team_row <- data.frame(
+  #         posteam = tm,
+  #         primary, 
+  #         secondary,
+  #         tertiary,
+  #         wordmark,
+  #         logo,
+  #         EPA,
+  #         SR,
+  #         PP_EPA,
+  #         PP_SR,
+  #         PR_EPA,
+  #         PR_SR,
+  #         RP_EPA,
+  #         RP_SR,
+  #         RR_EPA,
+  #         RR_SR
+  #       )
+  #       
+  #       new_table <- bind_rows(new_table, team_row)
+  #     }
+  #     
+  #     return(new_table)
+  #   }
+  #   
+  #   dt <- seq_table() %>% 
+  #     rename(
+  #       'Pass-Pass EPA/Play'= PP_EPA,
+  #       'Pass-Pass Success Rate'= PP_SR,
+  #       'Pass-Run EPA/Play'= PR_EPA,
+  #       'Pass-Run SR'= PR_SR,
+  #       'Run-Pass EPA/Play'= RP_EPA,
+  #       'Run-Pass SR'= RP_SR,
+  #       'Run-Run EPA/Play'= RR_EPA,
+  #       'Run-Run SR'= RR_SR,
+  #     ) %>% 
+  #     select(-posteam,-primary,-secondary,-tertiary,-wordmark) %>% 
+  #     gt() %>% 
+  #     
+  #   
+  #   return(dt)
+  #   
+  # 
+  # },escape = FALSE, options = list(pageLength = 10)) 
+################################################################################
 }
 
 # Run the application 

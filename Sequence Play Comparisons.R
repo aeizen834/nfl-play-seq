@@ -46,7 +46,7 @@ mutate(
   playType = case_when(
     rush == 1 ~ 'Run',
     play_type %in% c('punt','field_goal') ~ 'ST',
-    pass_attempt == 1 | qb_scramble == 1  ~ 'Pass',
+    pass == 1  ~ 'Pass',
     TRUE ~ 'No Play' ),
   logo = paste0('~/Extracurricular/NFL Data/Logos/',posteam,'.png')
 ) 

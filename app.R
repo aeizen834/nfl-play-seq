@@ -9,7 +9,8 @@ library(rsconnect)
 library(DT)
 
 ## Functions for the Code
-split_data_for_display <- function(data) {
+split_data_for_display <- function(data, pbp_data) {
+  
   n <- nrow(data)
   h <- round(n/2, 0)
   data_left <- data[1:h, ]
@@ -143,6 +144,109 @@ seq_table <- function(play_data, pbp_data){
   }
   
   return(new_table)
+}
+
+calculate_league_averages <- function(play_data, pbp_data) {
+  lg_avg <- pbp_data %>%
+    # group_by(playType) %>%
+    reframe(EPA = mean(epa),
+            SR = mean(success))
+  
+  seq_avg <- play_data %>%
+    group_by(seq_group) %>%
+    reframe(EPA = mean(epa),
+            SR = mean(success))
+  
+  
+  # Get Pass-Pass Metrics
+  SR <- lg_avg %>% 
+    pull(SR) %>%
+    unique()
+  
+  EPA <- lg_avg %>% 
+    pull(EPA) %>% 
+    round(3) %>%
+    unique()
+  
+  # Get Pass-Pass Metrics
+  PP_SR <- seq_avg %>% 
+    filter(seq_group == 'Pass-Pass') %>% 
+    pull(SR) 
+  
+  PP_EPA <- seq_avg %>% 
+    filter(seq_group == 'Pass-Pass') %>% 
+    pull(EPA) %>% 
+    round(3)
+  
+  # Get Pass-Run Metrics
+  PR_SR <- seq_avg %>% 
+    filter(seq_group == 'Pass-Run') %>% 
+    pull(SR) 
+  
+  PR_EPA <- seq_avg %>% 
+    filter(seq_group == 'Pass-Run') %>% 
+    pull(EPA) %>% 
+    round(3)
+  
+  # Get Run-Pass Metrics
+  RP_SR <- seq_avg %>% 
+    filter(seq_group == 'Run-Pass') %>% 
+    pull(SR) 
+  
+  RP_EPA <- seq_avg %>% 
+    filter(seq_group == 'Run-Pass') %>% 
+    pull(EPA) %>% 
+    round(3)
+  
+  # Get Run-Run Metrics
+  RR_SR <- seq_avg %>% 
+    filter(seq_group == 'Run-Run') %>% 
+    pull(SR) 
+  
+  RR_EPA <- seq_avg %>% 
+    filter(seq_group == 'Run-Run') %>% 
+    pull(EPA) %>% 
+    round(3)
+  
+  team_row <- data.frame(
+    posteam = 'NFL',
+    primary = NA, 
+    secondary = NA,
+    tertiary = NA,
+    wordmark = "https://raw.githubusercontent.com/nflverse/nflfastR-data/master/NFL.png",
+    # logo = NA,
+    EPA = if (length(EPA) == 0) 0 else EPA,
+    SR = if (length(SR) == 0) 0 else SR,
+    PP_EPA = if (length(PP_EPA) == 0) 0 else PP_EPA,
+    PP_SR = if (length(PP_SR) == 0) 0 else PP_SR,
+    PR_EPA = if (length(PR_EPA) == 0) 0 else PR_EPA,
+    PR_SR = if (length(PR_SR) == 0) 0 else PR_SR,
+    RP_EPA = if (length(RP_EPA) == 0) 0 else RP_EPA,
+    RP_SR = if (length(RP_SR) == 0) 0 else RP_SR,
+    RR_EPA = if (length(RR_EPA) == 0) 0 else RR_EPA,
+    RR_SR = if (length(RR_SR) == 0) 0 else RR_SR,
+    rank = 'AVG',
+    posteam_2 = 'NFL',
+    primary_2 = NA, 
+    secondary_2 = NA,
+    tertiary_2 = NA,
+    rank_2 = 'AVG',
+    wordmark_2 = "https://raw.githubusercontent.com/nflverse/nflfastR-data/master/NFL.png",
+    # logo = NA,
+    EPA_2 = if (length(EPA) == 0) 0 else EPA,
+    SR_2 = if (length(SR) == 0) 0 else SR,
+    PP_EPA_2 = if (length(PP_EPA) == 0) 0 else PP_EPA,
+    PP_SR_2 = if (length(PP_SR) == 0) 0 else PP_SR,
+    PR_EPA_2 = if (length(PR_EPA) == 0) 0 else PR_EPA,
+    PR_SR_2 = if (length(PR_SR) == 0) 0 else PR_SR,
+    RP_EPA_2 = if (length(RP_EPA) == 0) 0 else RP_EPA,
+    RP_SR_2 = if (length(RP_SR) == 0) 0 else RP_SR,
+    RR_EPA_2 = if (length(RR_EPA) == 0) 0 else RR_EPA,
+    RR_SR_2 = if (length(RR_SR) == 0) 0 else RR_SR
+  )
+  
+  return(team_row)
+  
 }
 
 calculate_sequence_frequencies <- function(play_data, side = 'Off') {
@@ -492,14 +596,16 @@ server <- function(input, output) {
              down %in% input$down,
              qtr %in% input$qtr)
     
+    lg_avg <- calculate_league_averages(t,p)
     
     play_table <- seq_table(t, pbp) %>% 
       select(-logo) %>% 
       arrange(desc(.data[[input$order]])) %>%
       unique() %>% 
-      mutate(rank = row_number())
+      mutate(rank = as.character(row_number()))
     
     table_split <- split_data_for_display(play_table) %>% 
+      bind_rows(lg_avg) %>% 
       relocate(rank_2, .before = wordmark_2)
     
     tab_subtitle <- paste0("2025 Season • Weeks ", min(pbp$week), "-", max(pbp$week), 
@@ -651,13 +757,12 @@ server <- function(input, output) {
       
       # Add attribution footer
       tab_source_note(
-        source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | **Color Scale:** Purple (Poor Performance) → Green (Strong Performance)")
+        source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | **Color Scale:** Blue (Poor Performance) → Red (Strong Performance)")
       ) %>%
-      
       # Style the source note
       tab_style(
         style = list(
-          cell_text(size = px(11), color = "#666666", style = "italic"),
+          cell_text(size = px(18), color = "#000", style = "italic"),
           cell_fill(color = "#F8F9FA")
         ),
         locations = cells_source_notes()
@@ -671,15 +776,39 @@ server <- function(input, output) {
         wordmark_2 ~ px(100),
         everything() ~ px(65)
       ) %>%
-      
-      # Center align rank columns
-      cols_align(align = "center", columns = c(rank, rank_2)) %>%
-      
-      # Center align all data columns
-      cols_align(align = "center", columns = c(SR, EPA, PP_SR, PP_EPA, PR_SR, PR_EPA, 
+      cols_align(align = "center", columns = c(rank, rank_2, wordmark, wordmark_2,  
+                                               SR, EPA, PP_SR, PP_EPA, PR_SR, PR_EPA, 
                                                RP_SR, RP_EPA, RR_SR, RR_EPA,
                                                SR_2, EPA_2, PP_SR_2, PP_EPA_2, PR_SR_2, PR_EPA_2, 
-                                               RP_SR_2, RP_EPA_2, RR_SR_2, RR_EPA_2))
+                                               RP_SR_2, RP_EPA_2, RR_SR_2, RR_EPA_2)) %>% 
+      tab_style(
+        style = cell_borders( sides = "top", color = "#E63946",
+                              weight = px(3), style = "solid"),
+        locations = cells_body(
+          columns = everything(), rows = rank == "AVG")
+      ) %>%
+      
+      # Dark gray background with white text
+      tab_style(
+        style = list(
+          cell_fill(color = "#2C2C2C"),  # Dark gray
+          cell_text(weight = "bold", color = "#FFFFFF", size = px(13))
+        ),
+        locations = cells_body( columns = everything(), rows = rank == "AVG")
+      ) %>%
+      
+      # Remove data color gradient from league avg row
+      tab_style(
+        style = cell_fill(color = "#2C2C2C"),  # Override gradient
+        locations = cells_body(
+          columns = c(EPA, SR, PP_EPA, PP_SR, PR_EPA, PR_SR, 
+                      RP_EPA, RP_SR, RR_EPA, RR_SR,
+                      EPA_2, SR_2, PP_EPA_2, PP_SR_2, PR_EPA_2, PR_SR_2,
+                      RP_EPA_2, RP_SR_2, RR_EPA_2, RR_SR_2),
+          rows = rank == "AVG"
+        )
+      )
+    
   })
   
   # Play Calling Tendancies

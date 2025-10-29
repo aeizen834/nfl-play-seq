@@ -58,7 +58,7 @@ seq_table <- function(play_data, pbp_data){
   
   # print(seq_chart)
   new_table <- c()
-  for (k in 1:32) {
+  for (k in 1:length(unique(seq_chart$posteam))) {
     tms <- seq_chart %>% pull(posteam) %>% unique()
     tm <- tms[k]
     primary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color) %>% unique() 
@@ -71,12 +71,14 @@ seq_table <- function(play_data, pbp_data){
     # Get Pass-Pass Metrics
     SR <- whole_totals %>% 
       filter(posteam == tm) %>% 
-      pull(total_sr) #%>% 
+      pull(total_sr) %>%
+      unique()
     # percent(accuracy = 0.1)
     EPA <- whole_totals %>% 
       filter(posteam == tm) %>% 
       pull(total_epa) %>% 
-      round(3)
+      round(3) %>%
+      unique()
     
     # Get Pass-Pass Metrics
     PP_SR <- seq_chart %>% 
@@ -125,16 +127,16 @@ seq_table <- function(play_data, pbp_data){
       tertiary,
       wordmark,
       logo,
-      EPA,
-      SR,
-      PP_EPA,
-      PP_SR,
-      PR_EPA,
-      PR_SR,
-      RP_EPA,
-      RP_SR,
-      RR_EPA,
-      RR_SR
+      EPA = if (length(EPA) == 0) 0 else EPA,
+      SR = if (length(SR) == 0) 0 else SR,
+      PP_EPA = if (length(PP_EPA) == 0) 0 else PP_EPA,
+      PP_SR = if (length(PP_SR) == 0) 0 else PP_SR,
+      PR_EPA = if (length(PR_EPA) == 0) 0 else PR_EPA,
+      PR_SR = if (length(PR_SR) == 0) 0 else PR_SR,
+      RP_EPA = if (length(RP_EPA) == 0) 0 else RP_EPA,
+      RP_SR = if (length(RP_SR) == 0) 0 else RP_SR,
+      RR_EPA = if (length(RR_EPA) == 0) 0 else RR_EPA,
+      RR_SR = if (length(RR_SR) == 0) 0 else RR_SR
     )
     
     new_table <- bind_rows(new_table, team_row)

@@ -403,7 +403,7 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
     # Background 
     annotate("rect", xmin = -1.75, xmax = 4.75, ymin = 0, ymax = 2.6,fill = third, alpha = .25) +
     # Caption
-    annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.65, y = .45, size = 6.5, parse = TRUE) +
+    annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.55, y = .45, size = 6.5, parse = TRUE) +
     # Team Wordmark
     geom_nfl_wordmarks( data = logo_data, aes(x = x, y = y, team_abbr = team), width = 0.75, alpha = 0.7) +
     # Frequency Connectors
@@ -439,6 +439,107 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
     # Labels and theming
     labs(
       title = paste0(team_name, ' Offensive Play Calling Tendancies'),
+      subtitle = subtitle,
+      # caption = "@arieizen | data: nflfastR"
+    ) +
+    theme_void() +
+    theme(
+      plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary),
+      plot.subtitle = element_text(size = 20, hjust = 0.5),
+      plot.caption = element_text(size = 14,face = "bold"),
+      legend.position = "none",
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA),
+      panel.spacing = unit(0.1, "lines"),
+      panel.border = element_rect(colour = secondary, fill=NA, linewidth=2.5)
+    ) +
+    coord_cartesian(xlim = c(-0.75, 3.75),ylim = c(0.5, 2.5),clip = "off")
+  
+  return(p)
+}
+
+create_def_decision_trees <- function(data, subtitle, def_team = 'DET') {
+  
+  freq_data <- data %>% 
+    filter(defteam == def_team)
+  
+  logo_data <- data.frame(
+    x = 1.5,
+    y = 1.5,
+    team = def_team
+  )
+  
+  team_name <- freq_data %>% pull(team_name) %>% unique()
+  primary <- freq_data %>% pull(team_color) %>% unique()
+  secondary <- freq_data %>% pull(team_color2) %>% unique()
+  third <- freq_data %>% pull(team_color3) %>% unique()
+  
+  # Process data for all teams
+  tree_data <- freq_data %>%
+    mutate(
+      first_play = t_last_play,
+      second_play = playType,
+      x_root = ifelse(first_play == "Pass", 0.5, 2.5),
+      x_end = case_when(
+        first_play == "Pass" & second_play == "Pass" ~ 0,
+        first_play == "Pass" & second_play == "Run" ~ 1,
+        first_play == "Run" & second_play == "Pass" ~ 2,
+        first_play == "Run" & second_play == "Run" ~ 3,
+      ),
+      y_root = 2,
+      y_end = 1,
+      # Compact labels for space efficiency
+      edge_label = paste0(round(frequency * 100), "%"),
+      first_epa_diff = first_epa_play - first_LA_epa_play,
+      epa_diff = epa_play - second_LA_epa_play,
+      # Create compact node labels
+      root_label = paste0(first_play, "\nEPA: ", round(first_epa_play, 2)," (",first_epa_rk,")", 
+                          "\nSR: ", round(first_SR * 100), "%", " (",first_SR_rk,")"),
+      end_label = paste0(second_play, "\nEPA: ", round(epa_play, 2), " (",second_epa_rk,")",
+                         "\nSR: ", round(SR * 100), "%", " (",second_SR_rk,")")
+    )
+  
+  # Create the plot with facets
+  p <- ggplot(tree_data) +
+    # Background 
+    annotate("rect", xmin = -1.75, xmax = 4.75, ymin = 0, ymax = 2.6,fill = third, alpha = .25) +
+    # Caption
+    annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.55, y = .45, size = 6.5, parse = TRUE) +
+    # Team Wordmark
+    geom_nfl_wordmarks( data = logo_data, aes(x = x, y = y, team_abbr = team), width = 0.75, alpha = 0.7) +
+    # Frequency Connectors
+    geom_segment( aes(x = x_root, y = y_root, xend = x_end, yend = y_end, linewidth = 5, color = frequency)) +
+    # Frequency Label
+    geom_label(
+      aes(x = (x_root + x_end) / 2, y = (y_root + y_end) / 2, label = edge_label),
+      size = 6.5, fontface = "bold", color = "black", fill = 'white') +
+    # Root nodes (Pass/Run starting points)
+    geom_label(
+      data = tree_data %>% distinct(defteam, first_play, x_root, y_root, 
+                                    first_epa_play, first_SR, first_epa_diff, root_label),
+      aes(x = x_root, y = y_root, fill = first_epa_diff, label = root_label),
+      size = 6.5, label.padding = unit(0.3, "lines"), 
+      label.r = unit(0.2, "lines"), fontface = "bold"
+    ) +
+    # Outcome nodes (second play results)
+    geom_label(
+      aes(x = x_end, y = y_end, fill = epa_diff, label = end_label),
+      size = 6.5,label.padding = unit(0.3, "lines"),
+      label.r = unit(0.2, "lines"), fontface = "bold"
+    ) +
+    # Color scales
+    scale_color_gradient2(
+      low = '#3B4CC0', high = '#B40426', mid = "#DDDDDD", 
+      midpoint = 0.5, name = "Frequency"
+    ) +
+    scale_fill_gradient2(
+      high = '#3B4CC0', low = '#B40426', mid = "#DDDDDD", 
+      name = "EPA vs League Avg"
+    ) +
+    
+    # Labels and theming
+    labs(
+      title = paste0(team_name, ' Defensive Play Calling Tendancies'),
       subtitle = subtitle,
       # caption = "@arieizen | data: nflfastR"
     ) +
@@ -535,6 +636,8 @@ ui <- navbarPage(
     }
   "))
   #############################################################################
+  # TAB #1: Main Dashboard
+  #############################################################################
   ),
   tabPanel("Main Dashboard",
     fluidRow(
@@ -560,7 +663,10 @@ ui <- navbarPage(
           column(12,gt_output('overview'))
         )
     ),
-  tabPanel("Play Calling Analysis",
+  #############################################################################
+  # TAB #2: Offensive Play Calling Analysis
+  #############################################################################
+  tabPanel("Offensive Play Calling Analysis",
            fluidRow(
              column(2,selectInput('tm', 'Select Team', 
                                   choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
@@ -573,15 +679,31 @@ ui <- navbarPage(
            fluidRow(
           column(12,plotOutput('tree', height = "85vh"))
         )
-      )
+      ),
+  #############################################################################
+  # TAB #3: Defensive Play Calling Analysis
+  #############################################################################
+  tabPanel("Defensive Play Calling Analysis",
+           fluidRow(
+             column(2,selectInput('t', 'Select Team', 
+                                  choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
+                                  selected = 'ARI')),
+             column(2,sliderInput("week_3", "Week Number:", min = 1, max = 22, value = c(1,18))),
+             column(2,sliderInput("wp_3", "Team Win %:", min = 0, max = 100, value = c(20,80))),
+             column(1,checkboxGroupInput('down_3', 'Down:', choices = 1:4, selected = 1:4, inline = T)),
+             column(1,checkboxGroupInput('qtr_3', 'Quarter:', choices = c(1,2,3,4,'OT' = 5), selected = 1:5, inline = T))
+           ),
+           fluidRow(
+             column(12,plotOutput('def_tend', height = "85vh"))
+           )
   )
+  )
+  #############################################################################
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
   
   app_data <- load_app_data()
-  # print(app_data %>% head() %>% as.data.frame())
-  # Stats Overview GT
+
   output$overview <- render_gt({
     
     t <- app_data$all_seq %>% 
@@ -595,8 +717,8 @@ server <- function(input, output) {
              between(wp,min(input$wp)/100,max(input$wp)/100),
              down %in% input$down,
              qtr %in% input$qtr)
-    
-    lg_avg <- calculate_league_averages(t,p)
+
+    lg_avg <- calculate_league_averages(t,pbp)
     
     play_table <- seq_table(t, pbp) %>% 
       select(-logo) %>% 
@@ -811,7 +933,7 @@ server <- function(input, output) {
     
   })
   
-  # Play Calling Tendancies
+  # Offensive Play Calling Tendancies
   output$tree <- renderPlot({
     
     tree_data <- app_data$pbp %>% 
@@ -830,7 +952,26 @@ server <- function(input, output) {
     
     tree_plot
   })
+
+  # Defensive Play Calling Tendancies
+  output$def_tend <- renderPlot({
+    
+    def_data <- app_data$pbp %>% 
+      filter(between(week,as.numeric(min(input$week_3)),max(input$week_3)),
+             between(wp,min(input$wp_3)/100,max(input$wp_3)/100),
+             down %in% input$down_3,
+             qtr %in% input$qtr_3)
+    
+    subtitle <- paste0("2025 Season • Weeks ", min(def_data$week), "-", max(def_data$week), 
+                       " • Win Probability ", min(input$wp_3), "%-", max(input$wp_3), "%",
+                       if(length(input$down_3) < 4) paste0(" • Downs: ", paste(input$down_3, collapse=", ")) else "",
+                       if(length(input$qtr_3) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", input$qtr_3), collapse=", ")) else "")
+    
+  def_freq_data <- calculate_sequence_frequencies(def_data,side = 'Def')
+  def_plot <- create_def_decision_trees(def_freq_data,subtitle, def_team = input$t)
   
+  def_plot
+  })
   # Table on Drill In Page
 ################################################################################  
   # # Should show epa/play and SR for both first play and second play of selected

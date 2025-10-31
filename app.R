@@ -640,23 +640,61 @@ ui <- navbarPage(
   #############################################################################
   ),
   tabPanel("Main Dashboard",
-    fluidRow(
-      column(2,sliderInput("week", "Week Number:", min = 1, max = 22, value = c(1,18))),
-      column(2,sliderInput("wp", "Team Win %:", min = 0, max = 100, value = c(20,80))),
-      column(1,checkboxGroupInput('down', 'Down:', choices = 1:4, selected = 1:4, inline = T)),
-      column(1,checkboxGroupInput('qtr', 'Quarter:', choices = c(1,2,3,4,'OT' = 5), selected = 1:5, inline = T)),
-      column(6,selectInput('order', 'Order Data:',
-                   choices = c('Overall Success Rate (SR)' = 'SR', 'Overall EPA/Play' = 'EPA',
-                               'Pass-Pass SR' = 'PP_SR', 'Pass-Pass EPA' = 'PP_EPA',
-                               'Pass-Run SR' = 'PR_SR', 'Pass-Run EPA' = 'PR_EPA',
-                               'Run-Pass SR' = 'RP_SR', 'Run-Pass EPA' = 'RP_EPA',
-                               'Run-Run SR' = 'RR_SR', 'Run-Run EPA' = 'RR_EPA'),
-                   selected = 'SR'#,
-                   # inline = T
-                   ))
-      
-    ),
-
+           fluidRow(
+             column(12,
+                    wellPanel(
+                      style = "background-color: #FFFFFF; border: 2px solid #E63946; border-radius: 8px; padding: 15px; margin-bottom: 20px;",
+                      h4("Filter Settings", style = "color: #E63946; margin-top: 0px; margin-bottom: 15px; font-size: 18px;"),
+                      fluidRow(
+                        column(2,
+                               sliderInput("week", "Week:", 
+                                           min = 1, max = 22, value = c(1,18))
+                        ),
+                        column(2,
+                               sliderInput("wp", "Win %:", 
+                                           min = 0, max = 100, value = c(20,80))
+                        ),
+                        column(2,
+                               div(style = "margin-top: 5px;",
+                                   strong("Down:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('down', NULL, 
+                                                      choices = 1:4, 
+                                                      selected = 1:4, inline = TRUE)
+                               )
+                        ),
+                        column(2,
+                               div(style = "margin-top: 5px;",
+                                   strong("Quarter:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('qtr', NULL, 
+                                                      choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                                      selected = 1:5, inline = TRUE)
+                               )
+                        ),
+                        column(2,
+                               selectInput('order', 'Sort By:',
+                                           choices = c('Overall SR' = 'SR', 
+                                                       'Overall EPA' = 'EPA',
+                                                       'Pass-Pass SR' = 'PP_SR', 
+                                                       'Pass-Pass EPA' = 'PP_EPA',
+                                                       'Pass-Run SR' = 'PR_SR', 
+                                                       'Pass-Run EPA' = 'PR_EPA',
+                                                       'Run-Pass SR' = 'RP_SR', 
+                                                       'Run-Pass EPA' = 'RP_EPA',
+                                                       'Run-Run SR' = 'RR_SR', 
+                                                       'Run-Run EPA' = 'RR_EPA'),
+                                           selected = 'SR')
+                        ),
+                        column(2,
+                               actionButton("apply_filters", 
+                                            "Apply",
+                                            class = "btn-primary",
+                                            icon = icon("filter"),
+                                            style = "width: 100%; height: 38px; margin-top: 25px; font-size: 15px; font-weight: bold;")
+                        )
+                      )
+                    )
+             )
+           ),
         # Show a plot of the generated distribution
         fluidRow(
            # DTOutput("raw_data")
@@ -668,33 +706,107 @@ ui <- navbarPage(
   #############################################################################
   tabPanel("Offensive Play Calling Analysis",
            fluidRow(
-             column(2,selectInput('tm', 'Select Team', 
-                                  choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
-                                  selected = 'ARI')),
-             column(2,sliderInput("week_2", "Week Number:", min = 1, max = 22, value = c(1,18))),
-             column(2,sliderInput("wp_2", "Team Win %:", min = 0, max = 100, value = c(20,80))),
-             column(1,checkboxGroupInput('down_2', 'Down:', choices = 1:4, selected = 1:4, inline = T)),
-             column(1,checkboxGroupInput('qtr_2', 'Quarter:', choices = c(1,2,3,4,'OT' = 5), selected = 1:5, inline = T))
+             column(12,
+                    wellPanel(
+                      style = "background-color: #FFFFFF; border: 2px solid #E63946; border-radius: 8px; padding: 15px; margin-bottom: 20px;",
+                      h4("Filter Settings", style = "color: #E63946; margin-top: 0px; margin-bottom: 15px; font-size: 18px;"),
+                      fluidRow(
+                        column(2,
+                               selectInput('tm', 'Team', 
+                                           choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
+                                           selected = 'ARI')
+                        ),
+                        column(2,
+                               sliderInput("week_2", "Week:", 
+                                           min = 1, max = 22, value = c(1,18))
+                        ),
+                        column(2,
+                               sliderInput("wp_2", "Win %:", 
+                                           min = 0, max = 100, value = c(20,80))
+                        ),
+                        column(2,
+                               div(style = "margin-top: 5px;",
+                                   strong("Down:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('down_2', NULL, 
+                                                      choices = 1:4, 
+                                                      selected = 1:4, inline = TRUE)
+                               )
+                        ),
+                        column(2,
+                               div(style = "margin-top: 5px;",
+                                   strong("Quarter:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('qtr_2', NULL, 
+                                                      choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                                      selected = 1:5, inline = TRUE)
+                               )
+                        ),
+                        column(2,
+                               actionButton("apply_filters_2", 
+                                            "Apply",
+                                            class = "btn-primary",
+                                            icon = icon("filter"),
+                                            style = "width: 100%; height: 38px; margin-top: 25px; font-size: 15px; font-weight: bold;")
+                        )
+                      )
+                    )
+             )
            ),
            fluidRow(
-          column(12,plotOutput('tree', height = "85vh"))
-        )
-      ),
+             column(12, plotOutput('tree', height = "85vh"))
+           )
+  ),
   #############################################################################
   # TAB #3: Defensive Play Calling Analysis
   #############################################################################
   tabPanel("Defensive Play Calling Analysis",
            fluidRow(
-             column(2,selectInput('t', 'Select Team', 
-                                  choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
-                                  selected = 'ARI')),
-             column(2,sliderInput("week_3", "Week Number:", min = 1, max = 22, value = c(1,18))),
-             column(2,sliderInput("wp_3", "Team Win %:", min = 0, max = 100, value = c(20,80))),
-             column(1,checkboxGroupInput('down_3', 'Down:', choices = 1:4, selected = 1:4, inline = T)),
-             column(1,checkboxGroupInput('qtr_3', 'Quarter:', choices = c(1,2,3,4,'OT' = 5), selected = 1:5, inline = T))
+             column(12,
+                    wellPanel(
+                      style = "background-color: #FFFFFF; border: 2px solid #E63946; border-radius: 8px; padding: 15px; margin-bottom: 20px;",
+                      h4("Filter Settings", style = "color: #E63946; margin-top: 0px; margin-bottom: 15px; font-size: 18px;"),
+                      fluidRow(
+                        column(2,
+                               selectInput('t', 'Team', 
+                                           choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
+                                           selected = 'ARI')
+                        ),
+                        column(2,
+                               sliderInput("week_3", "Week:", 
+                                           min = 1, max = 22, value = c(1,18))
+                        ),
+                        column(2,
+                               sliderInput("wp_3", "Win %:", 
+                                           min = 0, max = 100, value = c(20,80))
+                        ),
+                        column(2,
+                               div(style = "margin-top: 5px;",
+                                   strong("Down:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('down_3', NULL, 
+                                                      choices = 1:4, 
+                                                      selected = 1:4, inline = TRUE)
+                               )
+                        ),
+                        column(2,
+                               div(style = "margin-top: 5px;",
+                                   strong("Quarter:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('qtr_3', NULL, 
+                                                      choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                                      selected = 1:5, inline = TRUE)
+                               )
+                        ),
+                        column(2,
+                               actionButton("apply_filters_3", 
+                                            "Apply",
+                                            class = "btn-primary",
+                                            icon = icon("filter"),
+                                            style = "width: 100%; height: 38px; margin-top: 25px; font-size: 15px; font-weight: bold;")
+                        )
+                      )
+                    )
+             )
            ),
            fluidRow(
-             column(12,plotOutput('def_tend', height = "85vh"))
+             column(12, plotOutput('def_tend', height = "85vh"))
            )
   )
   )
@@ -703,20 +815,39 @@ ui <- navbarPage(
 server <- function(input, output) {
   
   app_data <- load_app_data()
+  
+  # Action for Tab 1
+  applied_overview <- reactiveValues(
+    # week = seq(from = app_data$all_seq %>% pull(week) %>% min(),
+    #            to = app_data$all_seq %>% pull(week) %>% max(),
+    #            by = 1),
+    week = c(app_data$all_seq %>% pull(week) %>% min(),
+             app_data$all_seq %>% pull(week) %>% max()),
+    wp = c(20,80),
+    down = 1:4,
+    qtr = 1:5
+  )
+
+  observeEvent(input$apply_filters, {
+    applied_overview$week <- input$week
+    applied_overview$wp <- input$wp
+    applied_overview$down <- input$down
+    applied_overview$qtr <- input$qtr
+  })
 
   output$overview <- render_gt({
     
     t <- app_data$all_seq %>% 
-      filter(between(week,as.numeric(min(input$week)),max(input$week)),
-             between(wp,min(input$wp)/100,max(input$wp)/100),
-             down %in% input$down,
-             qtr %in% input$qtr)
+      filter(between(week,as.numeric(min(applied_overview$week)),max(applied_overview$week)),
+             between(wp,min(applied_overview$wp)/100,max(applied_overview$wp)/100),
+             down %in% applied_overview$down,
+             qtr %in% applied_overview$qtr)
     
     pbp <- app_data$pbp %>% 
-      filter(between(week,as.numeric(min(input$week)),max(input$week)),
-             between(wp,min(input$wp)/100,max(input$wp)/100),
-             down %in% input$down,
-             qtr %in% input$qtr)
+      filter(between(week,as.numeric(min(applied_overview$week)),max(applied_overview$week)),
+             between(wp,min(applied_overview$wp)/100,max(applied_overview$wp)/100),
+             down %in% applied_overview$down,
+             qtr %in% applied_overview$qtr)
 
     lg_avg <- calculate_league_averages(t,pbp)
     
@@ -731,9 +862,9 @@ server <- function(input, output) {
       relocate(rank_2, .before = wordmark_2)
     
     tab_subtitle <- paste0("2025 Season • Weeks ", min(pbp$week), "-", max(pbp$week), 
-                          " • Win Probability ", min(input$wp), "%-", max(input$wp), "%",
-                          if(length(input$down) < 4) paste0(" • Downs: ", paste(input$down, collapse=", ")) else "",
-                          if(length(input$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", input$qtr), collapse=", ")) else "")
+                          " • Win Probability ", min(applied_overview$wp), "%-", max(applied_overview$wp), "%",
+                          if(length(applied_overview$down) < 4) paste0(" • Downs: ", paste(applied_overview$down, collapse=", ")) else "",
+                          if(length(applied_overview$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview$qtr), collapse=", ")) else "")
     
     # Option 1:
     low_color = "#8E44AD"
@@ -934,41 +1065,77 @@ server <- function(input, output) {
   })
   
   # Offensive Play Calling Tendancies
+  
+  # Action for Tab 2
+  applied_overview_2 <- reactiveValues(
+    tm = 'ARI',
+    week = c(1, 18),
+    wp = c(20, 80),
+    down = 1:4,
+    qtr = 1:5
+  )
+  
+  observeEvent(input$apply_filters_2, {
+    applied_overview_2$tm <- input$tm
+    applied_overview_2$week <- input$week_2  
+    applied_overview_2$wp <- input$wp_2      
+    applied_overview_2$down <- input$down_2  
+    applied_overview_2$qtr <- input$qtr_2 
+  })
+  
   output$tree <- renderPlot({
     
     tree_data <- app_data$pbp %>% 
-      filter(between(week,as.numeric(min(input$week_2)),max(input$week_2)),
-             between(wp,min(input$wp_2)/100,max(input$wp_2)/100),
-             down %in% input$down_2,
-             qtr %in% input$qtr_2)
+      filter(between(week, as.numeric(min(applied_overview_2$week)), max(applied_overview_2$week)),
+             between(wp, min(applied_overview_2$wp)/100, max(applied_overview_2$wp)/100),
+             down %in% applied_overview_2$down,
+             qtr %in% applied_overview_2$qtr)
     
     subtitle <- paste0("2025 Season • Weeks ", min(tree_data$week), "-", max(tree_data$week), 
-                       " • Win Probability ", min(input$wp_2), "%-", max(input$wp_2), "%",
-                       if(length(input$down_2) < 4) paste0(" • Downs: ", paste(input$down_2, collapse=", ")) else "",
-                       if(length(input$qtr_2) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", input$qtr_2), collapse=", ")) else "")
+                       " • Win Probability ", min(applied_overview_2$wp), "%-", max(applied_overview_2$wp), "%",
+                       if(length(applied_overview_2$down) < 4) paste0(" • Downs: ", paste(applied_overview_2$down, collapse=", ")) else "",
+                       if(length(applied_overview_2$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_2$qtr), collapse=", ")) else "")
     
-    off_freq_data <- calculate_sequence_frequencies(tree_data,side = 'Off')
-    tree_plot <- create_off_decision_trees(off_freq_data,subtitle, off_team = input$tm)
+    off_freq_data <- calculate_sequence_frequencies(tree_data, side = 'Off')
+    tree_plot <- create_off_decision_trees(off_freq_data, subtitle, off_team = applied_overview_2$tm)
     
     tree_plot
   })
 
   # Defensive Play Calling Tendancies
+  
+  # Action for Tab 3
+  applied_overview_3 <- reactiveValues(
+    tm = 'ARI',
+    week = c(1, 18),
+    wp = c(20, 80),
+    down = 1:4,
+    qtr = 1:5
+  )
+  
+  observeEvent(input$apply_filters_3, {
+    applied_overview_3$tm <- input$t
+    applied_overview_3$week <- input$week_3
+    applied_overview_3$wp <- input$wp_3      
+    applied_overview_3$down <- input$down_3  
+    applied_overview_3$qtr <- input$qtr_3
+  })
+  
   output$def_tend <- renderPlot({
     
     def_data <- app_data$pbp %>% 
-      filter(between(week,as.numeric(min(input$week_3)),max(input$week_3)),
-             between(wp,min(input$wp_3)/100,max(input$wp_3)/100),
-             down %in% input$down_3,
-             qtr %in% input$qtr_3)
+      filter(between(week, as.numeric(min(applied_overview_3$week)), max(applied_overview_3$week)),
+             between(wp, min(applied_overview_3$wp)/100, max(applied_overview_3$wp)/100),
+             down %in% applied_overview_3$down,
+             qtr %in% applied_overview_3$qtr)
     
     subtitle <- paste0("2025 Season • Weeks ", min(def_data$week), "-", max(def_data$week), 
-                       " • Win Probability ", min(input$wp_3), "%-", max(input$wp_3), "%",
-                       if(length(input$down_3) < 4) paste0(" • Downs: ", paste(input$down_3, collapse=", ")) else "",
-                       if(length(input$qtr_3) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", input$qtr_3), collapse=", ")) else "")
+                       " • Win Probability ", min(applied_overview_3$wp), "%-", max(applied_overview_3$wp), "%",
+                       if(length(applied_overview_3$down) < 4) paste0(" • Downs: ", paste(applied_overview_3$down, collapse=", ")) else "",
+                       if(length(applied_overview_3$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_3$qtr), collapse=", ")) else "")
     
   def_freq_data <- calculate_sequence_frequencies(def_data,side = 'Def')
-  def_plot <- create_def_decision_trees(def_freq_data,subtitle, def_team = input$t)
+  def_plot <- create_def_decision_trees(def_freq_data,subtitle, def_team = applied_overview_3$tm)
   
   def_plot
   })

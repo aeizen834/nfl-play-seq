@@ -652,7 +652,7 @@ ui <- navbarPage(
                         ),
                         column(2,
                                sliderInput("wp", "Win %:", 
-                                           min = 0, max = 100, value = c(20,80))
+                                           min = 0, max = 100, value = c(5,95))
                         ),
                         column(2,
                                div(style = "margin-top: 5px;",
@@ -722,7 +722,7 @@ ui <- navbarPage(
                         ),
                         column(2,
                                sliderInput("wp_2", "Win %:", 
-                                           min = 0, max = 100, value = c(20,80))
+                                           min = 0, max = 100, value = c(5,95))
                         ),
                         column(2,
                                div(style = "margin-top: 5px;",
@@ -776,7 +776,7 @@ ui <- navbarPage(
                         ),
                         column(2,
                                sliderInput("wp_3", "Win %:", 
-                                           min = 0, max = 100, value = c(20,80))
+                                           min = 0, max = 100, value = c(5,95))
                         ),
                         column(2,
                                div(style = "margin-top: 5px;",
@@ -867,12 +867,12 @@ server <- function(input, output) {
                           if(length(applied_overview$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview$qtr), collapse=", ")) else "")
     
     # Option 1:
-    low_color = "#8E44AD"
-    high_color = "#27AE60"
+    # low_color = "#8E44AD"
+    # high_color = "#27AE60"
     # Option 2:
-    # low_color = '#3B4CC0'
-    # high_color = '#B40426'
-    # mid_color = "#DDDDDD"
+    low_color = '#3B4CC0'
+    high_color = '#B40426'
+    mid_color = "#DDDDDD"
 
     table_split %>% 
       gt() %>% 
@@ -952,31 +952,28 @@ server <- function(input, output) {
                               SR_2, PP_SR_2, PR_SR_2, RP_SR_2, RR_SR_2), 
                   decimals = 1) %>% 
       
-      # COLOR CODING: Purple (bad) to Green (good) gradient
-      # Left side color coding
-      data_color(columns = EPA, palette = c(low_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
-      data_color(columns = SR, palette = c(low_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>% 
-      data_color(columns = PP_EPA, palette = c(low_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = PP_SR, palette = c(low_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
-      data_color(columns = PR_EPA, palette = c(low_color, high_color), domain = range(play_table$PR_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = PR_SR, palette = c(low_color, high_color), domain = range(play_table$PR_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RP_EPA, palette = c(low_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = RP_SR, palette = c(low_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RR_EPA, palette = c(low_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = RR_SR, palette = c(low_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>% 
+           data_color(columns = EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
+      data_color(columns = SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>% 
+      data_color(columns = PP_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = PP_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
+      data_color(columns = PR_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$PR_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = PR_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$PR_SR, na.rm = TRUE)) %>% 
+      data_color(columns = RP_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = RP_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
+      data_color(columns = RR_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = RR_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>% 
       
       # Right side color coding
-      data_color(columns = EPA_2, palette = c(low_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
-      data_color(columns = SR_2, palette = c(low_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>%
-      data_color(columns = PP_EPA_2, palette = c(low_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = PP_SR_2, palette = c(low_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
-      data_color(columns = PR_EPA_2, palette = c(low_color, high_color), domain = range(play_table$PR_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = PR_SR_2, palette = c(low_color, high_color), domain = range(play_table$PR_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RP_EPA_2, palette = c(low_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = RP_SR_2, palette = c(low_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RR_EPA_2, palette = c(low_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = RR_SR_2, palette = c(low_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>% 
-      
+      data_color(columns = EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
+      data_color(columns = SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>%
+      data_color(columns = PP_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = PP_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
+      data_color(columns = PR_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$PR_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = PR_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$PR_SR, na.rm = TRUE)) %>% 
+      data_color(columns = RP_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = RP_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
+      data_color(columns = RR_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = RR_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>%       
       # Add team logos/wordmarks
       gt_img_rows(wordmark, height = 25) %>% 
       gt_img_rows(wordmark_2, height = 25) %>% 

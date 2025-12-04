@@ -1021,10 +1021,14 @@ server <- function(input, output) {
                               SR_2, PP_SR_2, PR_SR_2, RP_SR_2, RR_SR_2), 
                   decimals = 1) %>% 
       
+<<<<<<< HEAD
       # COLOR CODING: Purple (bad) to Green (good) gradient
       # Left side color coding
       # Should I use rank for color or difference from lg average?
       data_color(columns = EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
+=======
+           data_color(columns = EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
+>>>>>>> e45682a9f03cae6d88bc6ae3401150948ec33883
       data_color(columns = SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>% 
       data_color(columns = PP_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
       data_color(columns = PP_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
@@ -1045,8 +1049,12 @@ server <- function(input, output) {
       data_color(columns = RP_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
       data_color(columns = RP_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
       data_color(columns = RR_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
+<<<<<<< HEAD
       data_color(columns = RR_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>% 
       
+=======
+      data_color(columns = RR_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>%       
+>>>>>>> e45682a9f03cae6d88bc6ae3401150948ec33883
       # Add team logos/wordmarks
       gt_img_rows(wordmark, height = 25) %>% 
       gt_img_rows(wordmark_2, height = 25) %>% 

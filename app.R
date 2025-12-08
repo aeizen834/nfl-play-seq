@@ -7,6 +7,7 @@ library(gt)
 library(gtExtras)
 library(rsconnect)
 library(DT)
+library(shadowtext)
 
 ## Functions for the Code
 split_data_for_display <- function(data, pbp_data) {

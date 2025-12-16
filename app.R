@@ -5,11 +5,16 @@ library(tidyverse)
 library(nflverse)
 library(gt)
 library(gtExtras)
+library(ggtext)
 library(rsconnect)
 library(DT)
 library(shadowtext)
+# library(showtext)
 
 ## Functions for the Code
+# showtext_auto()
+# font_add("Riffic", regular = "Riffic Free-Bold.ttf")
+
 split_data_for_display <- function(data, pbp_data) {
   
   n <- nrow(data)
@@ -348,17 +353,18 @@ calculate_sequence_frequencies <- function(play_data, side = 'Off') {
       group_by(defteam,t_last_play) %>% 
       mutate(frequency = sequence_count / sum(sequence_count)) %>%
       group_by(sequence) %>%
-      mutate(first_epa_rk = dense_rank(-first_epa_play),
-             first_SR_rk = dense_rank(-first_SR),
-             second_epa_rk = dense_rank(-epa_play),
-             second_SR_rk = dense_rank(-SR)) %>% 
+      mutate(first_epa_rk = dense_rank(first_epa_play),
+             first_SR_rk = dense_rank(first_SR),
+             second_epa_rk = dense_rank(epa_play),
+             second_SR_rk = dense_rank(SR)) %>% 
       merge(logos, by.x = 'defteam',by.y = 'team_abbr')
   }
   
   return(frequency_data)
 }
 
-create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
+create_off_decision_trees <- function(data, subtitle, off_team = 'DET', color = 'EPA/Play') {
+  
   
   freq_data <- data %>% 
     filter(posteam == off_team)
@@ -373,6 +379,17 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
   primary <- freq_data %>% pull(team_color) %>% unique()
   secondary <- freq_data %>% pull(team_color2) %>% unique()
   third <- freq_data %>% pull(team_color3) %>% unique()
+  
+  # Option 1:
+  # low_color = "#8E44AD"
+  # high_color = "#27AE60"
+  # Option 2:
+  # low_color = '#3B4CC0'
+  # high_color = '#B40426'
+  mid_color = "#DDDDDD"
+  # Option 3:
+  high_color = '#4B0092'
+  low_color = '#1AFF1A'
   
   # Process data for all teams
   tree_data <- freq_data %>%
@@ -390,8 +407,22 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
       y_end = 1,
       # Compact labels for space efficiency
       edge_label = paste0(round(frequency * 100), "%"),
-      first_epa_diff = first_epa_play - first_LA_epa_play,
-      epa_diff = epa_play - second_LA_epa_play) %>% 
+    )
+  if (color == 'EPA/Play'){
+    tree_data <- tree_data %>% 
+      mutate(
+        first_epa_diff = first_epa_rk,
+        epa_diff = second_epa_rk
+      )
+  } else {
+    tree_data <- tree_data %>% 
+      mutate(
+        first_epa_diff = first_SR_rk,
+        epa_diff = second_SR_rk
+      )
+  }
+  
+  tree_data <- tree_data %>% 
     mutate(
       first_play = paste0('Any ',t_last_play),
       second_play = paste0(playType, ' after ', t_last_play),
@@ -407,7 +438,7 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
     # Background 
     annotate("rect", xmin = -1.75, xmax = 4.75, ymin = 0, ymax = 2.6,fill = third, alpha = .5) +
     # Caption
-    annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.55, y = .45, size = 6.5, parse = TRUE) +
+    # annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.55, y = .45, size = 6.5, parse = TRUE) +
     # Team Wordmark
     # geom_nfl_wordmarks( data = logo_data, aes(x = x, y = y, team_abbr = team), width = 0.75, alpha = 0.7) +
     # Frequency Connectors
@@ -432,11 +463,12 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
     ) +
     # Color scales
     scale_color_gradient2(
-      low = '#3B4CC0', high = '#B40426', mid = "#DDDDDD", 
+      low = low_color, high = high_color, mid = mid_color, 
       midpoint = 0.5, name = "Frequency"
     ) +
     scale_fill_gradient2(
-      low = '#3B4CC0', high = '#B40426', mid = "#DDDDDD", 
+      low = low_color, high = high_color, mid = mid_color,,
+      midpoint = 16,
       name = "EPA vs League Avg"
     ) +
     
@@ -444,13 +476,19 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
     labs(
       title = paste0(team_name, ' Offensive Play Calling Tendancies'),
       subtitle = subtitle,
+      caption = paste0("**Analysis:** @AriEizen | **Data:** nflfastR | 
+                         **",color, " League Rank:**
+                         <span style='color: #4B0092;'>Purple</span> (Below Average) →
+                         <span style='color: #1AFF1A;'>Green</span> (Above Average)")
       # caption = "@arieizen | data: nflfastR"
     ) +
     theme_void() +
     theme(
-      plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary),
+      plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary #, family = 'Roboto'
+      ),
       plot.subtitle = element_text(size = 20, hjust = 0.5),
-      plot.caption = element_text(size = 14,face = "bold"),
+      # plot.caption = element_text(size = 14,face = "bold"),
+      plot.caption = element_markdown(size = 18, hjust = 0),
       legend.position = "none",
       plot.background = element_rect(fill = "white", color = NA),
       panel.background = element_rect(fill = "white", color = NA),
@@ -462,7 +500,7 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET') {
   return(p)
 }
 
-create_def_decision_trees <- function(data, subtitle, def_team = 'DET') {
+create_def_decision_trees <- function(data, subtitle, def_team = 'DET', color = 'EPA/Play') {
   
   freq_data <- data %>% 
     filter(defteam == def_team)
@@ -478,7 +516,18 @@ create_def_decision_trees <- function(data, subtitle, def_team = 'DET') {
   secondary <- freq_data %>% pull(team_color2) %>% unique()
   third <- freq_data %>% pull(team_color3) %>% unique()
   
-  # Process data for all teams
+  # Option 1:
+  # low_color = "#8E44AD"
+  # high_color = "#27AE60"
+  # Option 2:
+  # low_color = '#3B4CC0'
+  # high_color = '#B40426'
+  mid_color = "#DDDDDD"
+  # Option 3:
+  high_color = '#4B0092'
+  low_color = '#1AFF1A'
+  
+  
   tree_data <- freq_data %>%
     mutate(
       first_play = t_last_play,
@@ -494,8 +543,22 @@ create_def_decision_trees <- function(data, subtitle, def_team = 'DET') {
       y_end = 1,
       # Compact labels for space efficiency
       edge_label = paste0(round(frequency * 100), "%"),
-      first_epa_diff = first_epa_play - first_LA_epa_play,
-      epa_diff = epa_play - second_LA_epa_play) %>% 
+    )
+  if (color == 'EPA/Play'){
+    tree_data <- tree_data %>% 
+      mutate(
+        first_epa_diff = first_epa_rk,
+        epa_diff = second_epa_rk
+      )
+  } else {
+    tree_data <- tree_data %>% 
+      mutate(
+        first_epa_diff = first_SR_rk,
+        epa_diff = second_SR_rk
+      )
+  }
+  
+  tree_data <- tree_data %>% 
     mutate(
       first_play = paste0('Any ',t_last_play),
       second_play = paste0(playType, ' after ', t_last_play),
@@ -506,14 +569,15 @@ create_def_decision_trees <- function(data, subtitle, def_team = 'DET') {
                          "\nSR: ", round(SR * 100), "%", " (",second_SR_rk,")")
     )
   
+  
   # Create the plot with facets
   p <- ggplot(tree_data) +
     # Background 
-    annotate("rect", xmin = -1.75, xmax = 4.75, ymin = 0, ymax = 2.6,fill = third, alpha = .25) +
+    annotate("rect", xmin = -1.75, xmax = 4.75, ymin = 0, ymax = 2.6,fill = third, alpha = .5) +
     # Caption
-    annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.55, y = .45, size = 6.5, parse = TRUE) +
-    # Team Wordmark
-    geom_nfl_wordmarks( data = logo_data, aes(x = x, y = y, team_abbr = team), width = 0.75, alpha = 0.7) +
+    # annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.55, y = .45, size = 6.5, parse = TRUE) +
+    # # Team Wordmark
+    # geom_nfl_wordmarks( data = logo_data, aes(x = x, y = y, team_abbr = team), width = 0.75, alpha = 0.7) +
     # Frequency Connectors
     geom_segment( aes(x = x_root, y = y_root, xend = x_end, yend = y_end, linewidth = 5, color = frequency)) +
     # Frequency Label
@@ -536,25 +600,29 @@ create_def_decision_trees <- function(data, subtitle, def_team = 'DET') {
     ) +
     # Color scales
     scale_color_gradient2(
-      low = '#3B4CC0', high = '#B40426', mid = "#DDDDDD", 
+      low = low_color, high = high_color, mid = mid_color, 
       midpoint = 0.5, name = "Frequency"
     ) +
     scale_fill_gradient2(
-      high = '#3B4CC0', low = '#B40426', mid = "#DDDDDD", 
+      low = low_color, high = high_color, mid = mid_color,
+      midpoint = 16,
       name = "EPA vs League Avg"
     ) +
-    
     # Labels and theming
     labs(
-      title = paste0(team_name, ' Defensive Play Calling Tendancies'),
+      title = paste0(team_name, ' Offensive Play Calling Tendancies'),
       subtitle = subtitle,
+      caption = paste0("**Analysis:** @AriEizen | **Data:** nflfastR | 
+                         **",color, " League Rank:**
+                         <span style='color: #4B0092;'>Purple</span> (Below Average) →
+                         <span style='color: #1AFF1A;'>Green</span> (Above Average)")
       # caption = "@arieizen | data: nflfastR"
     ) +
     theme_void() +
     theme(
       plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary),
       plot.subtitle = element_text(size = 20, hjust = 0.5),
-      plot.caption = element_text(size = 14,face = "bold"),
+      plot.caption = element_markdown(size = 18, hjust = 0),
       legend.position = "none",
       plot.background = element_rect(fill = "white", color = NA),
       panel.background = element_rect(fill = "white", color = NA),
@@ -663,20 +731,20 @@ ui <- navbarPage(
                                            min = 0, max = 100, value = c(5,95))
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Down:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('down', NULL, 
+                               # div(style = "margin-top: 5px;",
+                                   # strong("Down:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('down',"Down:", NULL, 
                                                       choices = 1:4, 
                                                       selected = 1:4, inline = TRUE)
-                               )
+                               # )
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Quarter:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('qtr', NULL, 
+                               # div(style = "margin-top: 5px;",
+                                   # strong("Quarter:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('qtr',"Quarter:", NULL, 
                                                       choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
                                                       selected = 1:5, inline = TRUE)
-                               )
+                               # )
                         ),
                         column(2,
                                selectInput('order', 'Sort By:',
@@ -719,7 +787,7 @@ ui <- navbarPage(
                       style = "background-color: #FFFFFF; border: 2px solid #E63946; border-radius: 8px; padding: 15px; margin-bottom: 20px;",
                       h4("Filter Settings", style = "color: #E63946; margin-top: 0px; margin-bottom: 15px; font-size: 18px;"),
                       fluidRow(
-                        column(2,
+                        column(1,
                                selectInput('tm', 'Team', 
                                            choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
                                            selected = 'ARI')
@@ -733,20 +801,26 @@ ui <- navbarPage(
                                            min = 0, max = 100, value = c(5,95))
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Down:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('down_2', NULL, 
-                                                      choices = 1:4, 
-                                                      selected = 1:4, inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               # strong("Down:", style = "font-size: 14px;"),
+                               checkboxGroupInput('down_2',"Down:", NULL, 
+                                                  choices = 1:4, 
+                                                  selected = 1:4, inline = TRUE)
+                               # )
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Quarter:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('qtr_2', NULL, 
-                                                      choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                      selected = 1:5, inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               # strong("Quarter:", style = "font-size: 14px;"),
+                               checkboxGroupInput('qtr_2',"Quarter:", NULL, 
+                                                  choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                                  selected = 1:5, inline = TRUE)
+                               # )
+                        ),
+                        column(1,
+                               radioButtons('epa','Rank:', 
+                                            choices = c('EPA/Play','Success Rate'),
+                                            selected = 'EPA/Play')
+                               
                         ),
                         column(2,
                                actionButton("apply_filters_2", 
@@ -760,7 +834,9 @@ ui <- navbarPage(
              )
            ),
            fluidRow(
-             column(12, plotOutput('tree', height = "85vh"))
+             column(12, plotOutput('tree', height = "85vh"
+                                   )
+                    )
            )
   ),
   #############################################################################
@@ -773,7 +849,7 @@ ui <- navbarPage(
                       style = "background-color: #FFFFFF; border: 2px solid #E63946; border-radius: 8px; padding: 15px; margin-bottom: 20px;",
                       h4("Filter Settings", style = "color: #E63946; margin-top: 0px; margin-bottom: 15px; font-size: 18px;"),
                       fluidRow(
-                        column(2,
+                        column(1,
                                selectInput('t', 'Team', 
                                            choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
                                            selected = 'ARI')
@@ -787,20 +863,26 @@ ui <- navbarPage(
                                            min = 0, max = 100, value = c(5,95))
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Down:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('down_3', NULL, 
-                                                      choices = 1:4, 
-                                                      selected = 1:4, inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               # strong("Down:", style = "font-size: 14px;"),
+                               checkboxGroupInput('down_3',"Down:", NULL, 
+                                                  choices = 1:4, 
+                                                  selected = 1:4, inline = TRUE)
+                               # )
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Quarter:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('qtr_3', NULL, 
-                                                      choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                      selected = 1:5, inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               # strong("Quarter:", style = "font-size: 14px;"),
+                               checkboxGroupInput('qtr_3',"Quarter:", NULL, 
+                                                  choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                                  selected = 1:5, inline = TRUE)
+                               # )
+                        ),
+                        column(1,
+                               radioButtons('epa_2','Rank:', 
+                                            choices = c('EPA/Play','Success Rate'),
+                                            selected = 'EPA/Play')
+                               
                         ),
                         column(2,
                                actionButton("apply_filters_3", 
@@ -841,28 +923,29 @@ ui <- navbarPage(
                                            min = 0, max = 100, value = c(5,95))
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Down:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('down_4', NULL, 
-                                                      choices = 1:4, 
-                                                      selected = 1:4, inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               # strong("Down:", style = "font-size: 14px;"),
+                               checkboxGroupInput('down_4',"Down:", NULL, 
+                                                  choices = 1:4, 
+                                                  selected = 1:4, inline = TRUE)
+                               # )
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Distance:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('dist', NULL, 
+                               # div(style = "margin-top: 5px;",
+                               #     strong("Distance:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('dist',"Distance:", 
                                                       choices = c('10+','10-7','6-4','3-1','GTG'), 
                                                       selected = c('10+','10-7','6-4','3-1','GTG'), inline = TRUE)
-                               )
+                               # )
                         ),
+                        
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Quarter:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('qtr_4', NULL, 
-                                                      choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                      selected = 1:5, inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               # strong("Quarter:", style = "font-size: 14px;"),
+                               checkboxGroupInput('qtr_4',"Quarter:", NULL, 
+                                                  choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                                  selected = 1:5, inline = TRUE)
+                               # )
                         ),
                         column(1,
                                actionButton("apply_filters_4", 
@@ -909,28 +992,29 @@ ui <- navbarPage(
                                            min = 0, max = 100, value = c(5,95))
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Down:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('down_5', NULL, 
-                                                      choices = 1:4, 
-                                                      selected = 1:4, inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               # strong("Down:", style = "font-size: 14px;"),
+                               checkboxGroupInput('down_5',"Down:", NULL, 
+                                                  choices = 1:4, 
+                                                  selected = 1:4, inline = TRUE)
+                               # )
                         ),
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Distance:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('dist_2', NULL, 
-                                                      choices = c('10+','10-7','6-4','3-1','GTG'), 
-                                                      selected = c('10+','10-7','6-4','3-1','GTG'), inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               #     strong("Distance:", style = "font-size: 14px;"),
+                               checkboxGroupInput('dist_2',"Distance:", 
+                                                  choices = c('10+','10-7','6-4','3-1','GTG'), 
+                                                  selected = c('10+','10-7','6-4','3-1','GTG'), inline = TRUE)
+                               # )
                         ),
+                        
                         column(2,
-                               div(style = "margin-top: 5px;",
-                                   strong("Quarter:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('qtr_5', NULL, 
-                                                      choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                      selected = 1:5, inline = TRUE)
-                               )
+                               # div(style = "margin-top: 5px;",
+                               # strong("Quarter:", style = "font-size: 14px;"),
+                               checkboxGroupInput('qtr_5',"Quarter:", NULL, 
+                                                  choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                                  selected = 1:5, inline = TRUE)
+                               # )
                         ),
                         column(1,
                                actionButton("apply_filters_5", 
@@ -1011,9 +1095,12 @@ server <- function(input, output) {
     # low_color = "#8E44AD"
     # high_color = "#27AE60"
     # Option 2:
-    low_color = '#3B4CC0'
-    high_color = '#B40426'
+    # low_color = '#3B4CC0'
+    # high_color = '#B40426'
     mid_color = "#DDDDDD"
+    # Option 3:
+    low_color = '#4B0092'
+    high_color = '#1AFF1A'
 
     table_split %>% 
       gt() %>% 
@@ -1152,7 +1239,11 @@ server <- function(input, output) {
       
       # Add attribution footer
       tab_source_note(
-        source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | **Color Scale:** Blue (Poor Performance) → Red (Strong Performance)")
+        source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | 
+                         **Distance From League Average:**
+                         <span style='color: #4B0092;'>Purple</span> (Below Average) →
+                         <span style='color: #1AFF1A;'>Green</span> (Above Average)")
+            # source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | **Color Scale:** Purple (Poor Performance) → Green (Strong Performance)")
       ) %>%
       # Style the source note
       tab_style(
@@ -1238,7 +1329,7 @@ server <- function(input, output) {
                        if(length(applied_overview_2$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_2$qtr), collapse=", ")) else "")
     
     off_freq_data <- calculate_sequence_frequencies(tree_data, side = 'Off')
-    tree_plot <- create_off_decision_trees(off_freq_data, subtitle, off_team = applied_overview_2$tm)
+    tree_plot <- create_off_decision_trees(off_freq_data, subtitle, off_team = applied_overview_2$tm, color = input$epa)
     
     tree_plot
   })
@@ -1320,7 +1411,8 @@ server <- function(input, output) {
     subtitle <- paste0("2025 Season • Weeks ", min(play_table$week), "-", max(play_table$week), 
                        " • Win Probability ", min(applied_overview_4$wp), "%-", max(applied_overview_4$wp), "%",
                        if(length(applied_overview_4$down) < 4) paste0(" • Downs: ", paste(applied_overview_4$down, collapse=", ")) else " • All Downs ",
-                       if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else "")
+                       if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else " • All Qtrs ",
+                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances")
     
     # title_line <- 
     # print(play_table %>% head())
@@ -1346,7 +1438,7 @@ server <- function(input, output) {
       cols_label(posteam_wordmark = 'Offense', defteam_wordmark = 'Defense') %>%
       tab_header(title = paste0(team_name, ' Play Table'), subtitle = subtitle) %>% 
       fmt_number(columns = epa) %>% 
-      data_color(columns = epa, domain = c(-3,3), palette = c("#8E44AD", 'green')) %>%
+      data_color(columns = epa, domain = c(-3,3), palette = c('#4B0092', '#1AFF1A')) %>%
       data_color(playType, palette = c('red','blue')) %>% 
       gt_img_rows(columns = posteam_wordmark) %>%
       gt_img_rows(columns = defteam_wordmark) 
@@ -1380,7 +1472,8 @@ server <- function(input, output) {
     subtitle <- paste0("2025 Season • Weeks ", min(pass_plays$week), "-", max(pass_plays$week), 
                        " • Win Probability ", min(applied_overview_4$wp), "%-", max(applied_overview_4$wp), "%",
                        if(length(applied_overview_4$down) < 4) paste0(" • Downs: ", paste(applied_overview_4$down, collapse=", ")) else " • All Downs ",
-                       if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else "")
+                       if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else " • All Qtrs ",
+                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances")
     
     pass <- pass_plays %>% 
       # Pass Location: Right, Middle, Left | Pass Length: Short, Middle
@@ -1420,7 +1513,7 @@ server <- function(input, output) {
       geom_segment(aes(x = .5, xend = 3.5, y = 1.5,yend = 1.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 2.5,yend = 2.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 3.5,yend = 3.5), size = 1.5, color = 'white') +
-      scale_fill_continuous(low = "#8E44AD", high = 'green'#"#27AE60"
+      scale_fill_continuous(low = '#4B0092', high = '#1AFF1A'
       ) +
       labs(
         title = paste0(team_name, ' Pass Plays | ',total_plays, ' plays'),
@@ -1490,7 +1583,8 @@ server <- function(input, output) {
     subtitle <- paste0("2025 Season • Weeks ", min(rush_data$week), "-", max(rush_data$week), 
                        " • Win Probability ", min(applied_overview_4$wp), "%-", max(applied_overview_4$wp), "%",
                        if(length(applied_overview_4$down) < 4) paste0(" • Downs: ", paste(applied_overview_4$down, collapse=", ")) else " • All Downs ",
-                       if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else "")
+                       if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else " • All Qtrs ",
+                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances")
     
     avg_epa <- mean(rush$epa)
     total_runs <- sum(rush$plays)
@@ -1524,6 +1618,18 @@ server <- function(input, output) {
       left_join(rush, by = 'gap_side') %>%
       mutate(label_text = paste0(round(epa,2),#percent(freq, accuracy = 0.1), 
                                  "\n(", percent(sr, accuracy = 0.1), " SR)"))
+    
+    # Option 1:
+    # low_color = "#8E44AD"
+    # high_color = "#27AE60"
+    # Option 2:
+    # low_color = '#3B4CC0'
+    # high_color = '#B40426'
+    mid_color = "#DDDDDD"
+    # Option 3:
+    low_color = '#4B0092'
+    high_color = '#1AFF1A'
+    
     
     # Create label coordinates data frame
     play_totals <- data.frame(
@@ -1569,7 +1675,7 @@ server <- function(input, output) {
                 size = 10, lineheight = 0.9) +
       
       # Color scale: diverging around average SR
-      scale_color_gradient2(low = "red", mid = "yellow", high = "#27AE60",
+      scale_color_gradient2(low = low_color, mid = mid_color, high = high_color,
                             midpoint = avg_epa,
                             # breaks = c(min(rush_stats$sr), max(rush_stats$sr)),
                             # labels = percent_format(accuracy = 1),
@@ -1638,7 +1744,8 @@ server <- function(input, output) {
     subtitle <- paste0("2025 Season • Weeks ", min(play_table$week), "-", max(play_table$week), 
                        " • Win Probability ", min(applied_overview_5$wp), "%-", max(applied_overview_5$wp), "%",
                        if(length(applied_overview_5$down) < 4) paste0(" • Downs: ", paste(applied_overview_5$down, collapse=", ")) else " • All Downs ",
-                       if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else "")
+                       if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else " • All Qtrs ",
+                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances")
     
     # title_line <- 
     # print(play_table %>% head())
@@ -1655,7 +1762,7 @@ server <- function(input, output) {
       cols_label(posteam_wordmark = 'Offense', defteam_wordmark = 'Defense') %>%
       tab_header(title = paste0(team_name, ' Defensive Play Table'), subtitle = subtitle) %>% 
       fmt_number(columns = epa) %>% 
-      data_color(columns = epa, domain = c(-3,3), palette = c('green',"#8E44AD")) %>%
+      data_color(columns = epa, domain = c(-3,3), palette = c('#4B0092', '#1AFF1A')) %>%
       data_color(playType, palette = c('red','blue')) %>% 
       gt_img_rows(columns = posteam_wordmark) %>%
       gt_img_rows(columns = defteam_wordmark) 
@@ -1679,7 +1786,8 @@ server <- function(input, output) {
     subtitle <- paste0("2025 Season • Weeks ", min(pass_plays$week), "-", max(pass_plays$week), 
                        " • Win Probability ", min(applied_overview_5$wp), "%-", max(applied_overview_5$wp), "%",
                        if(length(applied_overview_5$down) < 4) paste0(" • Downs: ", paste(applied_overview_5$down, collapse=", ")) else " • All Downs ",
-                       if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else "")
+                       if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else " • All Qtrs ",
+                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances")
     
     pass <- pass_plays %>% 
       # Pass Location: Right, Middle, Left | Pass Length: Short, Middle
@@ -1719,8 +1827,7 @@ server <- function(input, output) {
       geom_segment(aes(x = .5, xend = 3.5, y = 1.5,yend = 1.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 2.5,yend = 2.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 3.5,yend = 3.5), size = 1.5, color = 'white') +
-      scale_fill_continuous(high = "#8E44AD", low = 'green'#"#27AE60"
-      ) +
+      scale_fill_continuous(low = '#4B0092', high = '#1AFF1A') +
       labs(
         title = paste0(team_name, ' Defensive Pass Plays | ',total_plays, ' plays'),
         subtitle = subtitle,
@@ -1789,7 +1896,8 @@ server <- function(input, output) {
     subtitle <- paste0("2025 Season • Weeks ", min(rush_data$week), "-", max(rush_data$week), 
                        " • Win Probability ", min(applied_overview_5$wp), "%-", max(applied_overview_5$wp), "%",
                        if(length(applied_overview_5$down) < 4) paste0(" • Downs: ", paste(applied_overview_5$down, collapse=", ")) else " • All Downs ",
-                       if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else "")
+                       if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else " • All Qtrs ",
+                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances")
     
     avg_epa <- mean(rush$epa)
     total_runs <- sum(rush$plays)
@@ -1835,6 +1943,17 @@ server <- function(input, output) {
     ) %>%
       left_join(rush, by = 'gap_side')
     
+    # Option 1:
+    # low_color = "#8E44AD"
+    # high_color = "#27AE60"
+    # Option 2:
+    # low_color = '#3B4CC0'
+    # high_color = '#B40426'
+    mid_color = "#DDDDDD"
+    # Option 3:
+    low_color = '#4B0092'
+    high_color = '#1AFF1A'
+    
     # Create plot
     ggplot() +
       # Line of Scrimmage
@@ -1868,7 +1987,7 @@ server <- function(input, output) {
                 size = 10, lineheight = 0.9) +
       
       # Color scale: diverging around average SR
-      scale_color_gradient2(low = "red", mid = "yellow", high = "#27AE60",
+      scale_color_gradient2(low = low_color, mid = mid_color, high = high_color,
                             midpoint = avg_epa,
                             # breaks = c(min(rush_stats$sr), max(rush_stats$sr)),
                             # labels = percent_format(accuracy = 1),

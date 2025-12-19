@@ -922,13 +922,18 @@ ui <- navbarPage(
                                sliderInput("wp_4", "Win %:", 
                                            min = 0, max = 100, value = c(5,95))
                         ),
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Down:", style = "font-size: 14px;"),
                                checkboxGroupInput('down_4',"Down:", NULL, 
                                                   choices = 1:4, 
                                                   selected = 1:4, inline = TRUE)
                                # )
+                        ),
+                        column(1,
+                          radioButtons('tile','Tile Color:',
+                                       choices = c('EPA/Play','Success Rate','Frequency'),
+                                       selected = 'EPA/Play')
                         ),
                         column(2,
                                # div(style = "margin-top: 5px;",
@@ -991,13 +996,18 @@ ui <- navbarPage(
                                sliderInput("wp_5", "Win %:", 
                                            min = 0, max = 100, value = c(5,95))
                         ),
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Down:", style = "font-size: 14px;"),
                                checkboxGroupInput('down_5',"Down:", NULL, 
                                                   choices = 1:4, 
                                                   selected = 1:4, inline = TRUE)
                                # )
+                        ),
+                        column(1,
+                               radioButtons('tile_2','Tile Color:',
+                                            choices = c('EPA/Play','Success Rate','Frequency'),
+                                            selected = 'EPA/Play')
                         ),
                         column(2,
                                # div(style = "margin-top: 5px;",
@@ -1366,7 +1376,7 @@ server <- function(input, output) {
                        if(length(applied_overview_3$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_3$qtr), collapse=", ")) else "")
     
   def_freq_data <- calculate_sequence_frequencies(def_data,side = 'Def')
-  def_plot <- create_def_decision_trees(def_freq_data,subtitle, def_team = applied_overview_3$tm)
+  def_plot <- create_def_decision_trees(def_freq_data,subtitle, def_team = applied_overview_3$tm, color = input$epa_2)
   
   def_plot
   })
@@ -1477,12 +1487,19 @@ server <- function(input, output) {
     
     pass <- pass_plays %>% 
       # Pass Location: Right, Middle, Left | Pass Length: Short, Middle
+      # mutate(depth_zone = case_when(
+      #   is_screen_pass ~ "Screen",
+      #   air_yards < 10 #& air_yards >= 0 
+      #   ~ "Short (< 10)",
+      #   air_yards >= 10 & air_yards < 20 ~ "Medium (10-20)",
+      #   air_yards >= 20 ~ "Deep (20+)",
+      #   TRUE ~ NA_character_),
       mutate(depth_zone = case_when(
         is_screen_pass ~ "Screen",
         air_yards < 10 #& air_yards >= 0 
-        ~ "Short (< 10)",
-        air_yards >= 10 & air_yards < 20 ~ "Medium (10-20)",
-        air_yards >= 20 ~ "Deep (20+)",
+        ~ "< 10 Yrds",
+        air_yards >= 10 & air_yards < 20 ~ "10-20 Yrds",
+        air_yards >= 20 ~ "20+ Yrds",
         TRUE ~ NA_character_),
         pass_location = case_when(
           pass_location == 'right' ~ 'Right',
@@ -1492,20 +1509,27 @@ server <- function(input, output) {
         )
       ) %>% 
       mutate(pass_location = factor(pass_location, levels = c('Left','Middle','Right')),
-             depth_zone = factor(depth_zone, levels = c('Screen',"Short (< 10)","Medium (10-20)","Deep (20+)"))) %>% 
+             depth_zone = factor(depth_zone, levels = c('Screen',"< 10 Yrds","10-20 Yrds","20+ Yrds"))) %>% 
+      # depth_zone = factor(depth_zone, levels = c('Screen',"Short (< 10)","Medium (10-20)","Deep (20+)"))) %>% 
       group_by(pass_location, depth_zone, .drop = FALSE) %>% 
       reframe(plays = n(),
               sr = mean(success),
               epa = mean(epa)) %>% 
-      mutate(label = paste0('EPA: ', round(epa, 2), ' | SR: ',percent(sr, accuracy = .1), '\n', plays, ' plays')) #%>% 
+      mutate(label = paste0('EPA: ', round(epa, 2), ' | SR: ',percent(sr, accuracy = .1), '\n', plays, ' plays'),
+             freq = plays/sum(plays),
+             fill_color = case_when(
+               input$tile == 'EPA/Play' ~ epa,
+               input$tile == 'Success Rate' ~ sr,
+               input$tile == 'Frequency' ~ freq
+             )) #%>% 
     # group_by(posteam) %>%
     # mutate(freq = plays/sum(plays))
     
     total_plays <- sum(pass$plays)
     
-    ggplot(pass, aes(x = pass_location, y = depth_zone, fill = epa)) +
+    ggplot(pass, aes(x = pass_location, y = depth_zone, fill = fill_color)) +
       geom_tile() +
-      # geom_text(aes(label = label)) +
+      geom_label(aes(label = label), fill = 'white') +
       # Vertical grid
       geom_segment(aes(x = 1.5, xend = 1.5, y = 0.5,yend = 4.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = 2.5, xend = 2.5, y = 0.5,yend = 4.5), size = 1.5, color = 'white') +
@@ -1518,30 +1542,25 @@ server <- function(input, output) {
       labs(
         title = paste0(team_name, ' Pass Plays | ',total_plays, ' plays'),
         subtitle = subtitle,
-        caption = "Data: nflverse/nflfastR | @arieizen"
+        caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Tile Color** = ", input$tile),
+        x = 'Pass Location',
+        y = 'Pass Depth'
       ) +
       theme_void() +
       theme(
         plot.background = element_rect(fill = "#468944", color = NA),
         panel.background = element_rect(fill = "#468944", color = NA),
         panel.border = element_rect(colour = 'white', fill = NA, linewidth = 2.5),
-        axis.title.x = element_blank(),
-        # axis.title.y = element_blank(),
-        axis.text = element_text(color = 'white', face = 'bold', size = 10),
+        axis.text = element_text(color = 'white', face = 'bold', size = 14),
+        axis.title.y = element_text(color = 'white', face = 'bold', size = 16, angle = 90),
+        axis.title.x = element_text(color = 'white', face = 'bold', size = 16),
         legend.position = "none",
-        # legend.direction = "horizontal",
-        # legend.background = element_rect(fill = alpha("white", 0.9), color = "grey30"),
-        # legend.title = element_text(face = "bold", size = 9),
-        # legend.text = element_text(size = 8),
-        # legend.key.height = unit(0.4, "cm"),
-        # legend.key.width = unit(2, "cm"),
-        # legend.margin = margin(8,8,8,8),
-        plot.title = element_text(face = "bold", size = 20, hjust = 0.5, color = 'white', 
+        plot.title = element_text(face = "bold", size = 20, hjust = 0.5, color = 'white',
                                   margin = margin(t = 10, b = 5)),
         plot.subtitle = element_text(size = 16, hjust = 0.5, color = 'white',
                                      margin = margin(b = 10)),
-        plot.caption = element_text(face = "bold", size = 14, color = 'white',#hjust = 0.5, 
-                                    margin = margin(t = 10, b = 5)),
+        plot.caption = element_markdown(face = "bold", size = 14, color = 'white',hjust = 0, 
+                                        margin = margin(t = 10, b = 5)),
         plot.margin = margin(10, 10, 10, 10)
       ) +
       coord_cartesian(xlim = c(1.1,2.9), ylim = c(1.1,3.9)) #+
@@ -1685,7 +1704,7 @@ server <- function(input, output) {
       labs(
         title = paste0(team_name, ' Run Plays & QB Scrambles By Location | ', total_runs,' Plays'),
         subtitle = subtitle,
-        caption = "Arrow color = EPA/Play | Label = EPA/Play (Success Rate) | Line Width = Frequency | Data: nflverse/nflfastR | @arieizen"
+        caption = "**Analysis:** @arieizen | **Data:** nflfastR | **Arrow color** = EPA/Play | **Label** = EPA/Play (Success Rate) | **Line Width** = Frequency"
       ) +
       
       theme_void() +
@@ -1698,8 +1717,8 @@ server <- function(input, output) {
                                   margin = margin(t = 10, b = 5)),
         plot.subtitle = element_text(size = 16, hjust = 0.5, color = 'white',
                                      margin = margin(b = 10)),
-        plot.caption = element_text(face = "bold", size = 14, color = 'white',#hjust = 0.5, 
-                                    margin = margin(t = 10, b = 5)),
+        plot.caption = element_markdown(face = "bold", size = 14, color = 'white',hjust = 0, 
+                                        margin = margin(t = 10, b = 5)),
         plot.margin = margin(10, 10, 10, 10)
       )   
   })
@@ -1762,7 +1781,7 @@ server <- function(input, output) {
       cols_label(posteam_wordmark = 'Offense', defteam_wordmark = 'Defense') %>%
       tab_header(title = paste0(team_name, ' Defensive Play Table'), subtitle = subtitle) %>% 
       fmt_number(columns = epa) %>% 
-      data_color(columns = epa, domain = c(-3,3), palette = c('#4B0092', '#1AFF1A')) %>%
+      data_color(columns = epa, domain = c(-3,3), palette = c('#1AFF1A','#4B0092')) %>%
       data_color(playType, palette = c('red','blue')) %>% 
       gt_img_rows(columns = posteam_wordmark) %>%
       gt_img_rows(columns = defteam_wordmark) 
@@ -1791,12 +1810,19 @@ server <- function(input, output) {
     
     pass <- pass_plays %>% 
       # Pass Location: Right, Middle, Left | Pass Length: Short, Middle
+      # mutate(depth_zone = case_when(
+      #   is_screen_pass ~ "Screen",
+      #   air_yards < 10 #& air_yards >= 0 
+      #   ~ "Short (< 10)",
+      #   air_yards >= 10 & air_yards < 20 ~ "Medium (10-20)",
+      #   air_yards >= 20 ~ "Deep (20+)",
+      #   TRUE ~ NA_character_),
       mutate(depth_zone = case_when(
         is_screen_pass ~ "Screen",
         air_yards < 10 #& air_yards >= 0 
-        ~ "Short (< 10)",
-        air_yards >= 10 & air_yards < 20 ~ "Medium (10-20)",
-        air_yards >= 20 ~ "Deep (20+)",
+        ~ "< 10 Yrds",
+        air_yards >= 10 & air_yards < 20 ~ "10-20 Yrds",
+        air_yards >= 20 ~ "20+ Yrds",
         TRUE ~ NA_character_),
         pass_location = case_when(
           pass_location == 'right' ~ 'Right',
@@ -1806,20 +1832,28 @@ server <- function(input, output) {
         )
       ) %>% 
       mutate(pass_location = factor(pass_location, levels = c('Left','Middle','Right')),
-             depth_zone = factor(depth_zone, levels = c('Screen',"Short (< 10)","Medium (10-20)","Deep (20+)"))) %>% 
+             depth_zone = factor(depth_zone, levels = c('Screen',"< 10 Yrds","10-20 Yrds","20+ Yrds"))) %>% 
+      # depth_zone = factor(depth_zone, levels = c('Screen',"Short (< 10)","Medium (10-20)","Deep (20+)"))) %>% 
       group_by(pass_location, depth_zone, .drop = FALSE) %>% 
       reframe(plays = n(),
               sr = mean(success),
               epa = mean(epa)) %>% 
-      mutate(label = paste0('EPA: ', round(epa, 2), ' | SR: ',percent(sr, accuracy = .1), '\n', plays, ' plays')) #%>% 
+      mutate(label = paste0('EPA: ', round(epa, 2), ' | SR: ',percent(sr, accuracy = .1), '\n', plays, ' plays'),
+             freq = plays/sum(plays),
+             fill_color = case_when(
+               input$tile_2 == 'EPA/Play' ~ epa,
+               input$tile_2 == 'Success Rate' ~ sr,
+               input$tile_2 == 'Frequency' ~ freq
+             )) #%>% 
     # group_by(posteam) %>%
     # mutate(freq = plays/sum(plays))
     
     total_plays <- sum(pass$plays)
-    
-    ggplot(pass, aes(x = pass_location, y = depth_zone, fill = epa)) +
+    print(pass
+          4)
+    ggplot(pass, aes(x = pass_location, y = depth_zone, fill = fill_color)) +
       geom_tile() +
-      # geom_text(aes(label = label)) +
+      geom_label(aes(label = label), fill = 'white') +
       # Vertical grid
       geom_segment(aes(x = 1.5, xend = 1.5, y = 0.5,yend = 4.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = 2.5, xend = 2.5, y = 0.5,yend = 4.5), size = 1.5, color = 'white') +
@@ -1827,34 +1861,29 @@ server <- function(input, output) {
       geom_segment(aes(x = .5, xend = 3.5, y = 1.5,yend = 1.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 2.5,yend = 2.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 3.5,yend = 3.5), size = 1.5, color = 'white') +
-      scale_fill_continuous(low = '#4B0092', high = '#1AFF1A') +
+      scale_fill_continuous(high = '#4B0092', low = '#1AFF1A') +
       labs(
         title = paste0(team_name, ' Defensive Pass Plays | ',total_plays, ' plays'),
         subtitle = subtitle,
-        caption = "Data: nflverse/nflfastR | @arieizen"
+        caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Tile Color** = ", input$tile_2),
+        x = 'Pass Location',
+        y = 'Pass Depth'
       ) +
-      theme_void() +
+      # theme_void() +
       theme(
         plot.background = element_rect(fill = "#468944", color = NA),
         panel.background = element_rect(fill = "#468944", color = NA),
         panel.border = element_rect(colour = 'white', fill = NA, linewidth = 2.5),
-        axis.title.x = element_blank(),
-        # axis.title.y = element_blank(),
-        axis.text = element_text(color = 'white', face = 'bold', size = 10),
+        axis.text = element_text(color = 'white', face = 'bold', size = 14),
+        axis.title.y = element_text(color = 'white', face = 'bold', size = 16, angle = 90),
+        axis.title.x = element_text(color = 'white', face = 'bold', size = 16),
         legend.position = "none",
-        # legend.direction = "horizontal",
-        # legend.background = element_rect(fill = alpha("white", 0.9), color = "grey30"),
-        # legend.title = element_text(face = "bold", size = 9),
-        # legend.text = element_text(size = 8),
-        # legend.key.height = unit(0.4, "cm"),
-        # legend.key.width = unit(2, "cm"),
-        # legend.margin = margin(8,8,8,8),
-        plot.title = element_text(face = "bold", size = 20, hjust = 0.5, color = 'white', 
+        plot.title = element_text(face = "bold", size = 20, hjust = 0.5, color = 'white',
                                   margin = margin(t = 10, b = 5)),
         plot.subtitle = element_text(size = 16, hjust = 0.5, color = 'white',
                                      margin = margin(b = 10)),
-        plot.caption = element_text(face = "bold", size = 14, color = 'white',#hjust = 0.5, 
-                                    margin = margin(t = 10, b = 5)),
+        plot.caption = element_markdown(face = "bold", size = 14, color = 'white',hjust = 0, 
+                                        margin = margin(t = 10, b = 5)),
         plot.margin = margin(10, 10, 10, 10)
       ) +
       coord_cartesian(xlim = c(1.1,2.9), ylim = c(1.1,3.9)) #+
@@ -1951,8 +1980,8 @@ server <- function(input, output) {
     # high_color = '#B40426'
     mid_color = "#DDDDDD"
     # Option 3:
-    low_color = '#4B0092'
-    high_color = '#1AFF1A'
+    high_color = '#4B0092'
+    low_color = '#1AFF1A'
     
     # Create plot
     ggplot() +
@@ -1997,7 +2026,7 @@ server <- function(input, output) {
       labs(
         title = paste0(team_name, ' Defensive Run Plays & QB Scrambles By Location | ', total_runs,' Plays'),
         subtitle = subtitle,
-        caption = "Arrow color = EPA/Play | Label = EPA/Play (Success Rate) | Line Width = Frequency | Data: nflverse/nflfastR | @arieizen"
+        caption = "**Analysis:** @arieizen | **Data:** nflfastR | **Arrow color** = EPA/Play | **Label** = EPA/Play (Success Rate) | **Line Width** = Frequency"
       ) +
       
       theme_void() +
@@ -2010,7 +2039,7 @@ server <- function(input, output) {
                                   margin = margin(t = 10, b = 5)),
         plot.subtitle = element_text(size = 16, hjust = 0.5, color = 'white',
                                      margin = margin(b = 10)),
-        plot.caption = element_text(face = "bold", size = 14, color = 'white',#hjust = 0.5, 
+        plot.caption = element_markdown(face = "bold", size = 14, color = 'white',hjust = 0, 
                                     margin = margin(t = 10, b = 5)),
         plot.margin = margin(10, 10, 10, 10)
       )   

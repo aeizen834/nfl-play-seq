@@ -1822,7 +1822,7 @@ server <- function(input, output) {
              )) #%>% 
     # group_by(posteam) %>%
     # mutate(freq = plays/sum(plays))
-    print(pass)
+    # print(pass)
     total_plays <- sum(pass$plays)
     
     ggplot(pass, aes(x = pass_location, y = depth_zone, fill = fill_color)) +

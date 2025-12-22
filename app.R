@@ -9,11 +9,6 @@ library(ggtext)
 library(rsconnect)
 library(DT)
 library(shadowtext)
-# library(showtext)
-
-## Functions for the Code
-# showtext_auto()
-# font_add("Riffic", regular = "Riffic Free-Bold.ttf")
 
 split_data_for_display <- function(data, pbp_data) {
   
@@ -1422,7 +1417,6 @@ server <- function(input, output) {
   })
   
   output$pbp_table <- render_gt({
-    # print(applied_overview_4$dist)
     play_table <- app_data$full_data %>% 
       filter(posteam == applied_overview_4$tm,
              between(week, as.numeric(min(applied_overview_4$week)), max(applied_overview_4$week)),
@@ -1443,26 +1437,11 @@ server <- function(input, output) {
                        if(length(applied_overview_4$down) < 4) paste0(" • Downs: ", paste(applied_overview_4$down, collapse=", ")) else " • All Downs ",
                        if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else " • All Qtrs ",
                        if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances")
-    
-    # title_line <- 
-    # print(play_table %>% head())
     play_table %>% 
-      select(week, 
-             posteam_wordmark, defteam_wordmark,
-             # posteam_logo_1,defteam_logo_1,
+      select(week, posteam_wordmark, defteam_wordmark,
              qtr, down,ydstogo, yrdln, yards_gained,playType, epa,desc) %>%  
-      # head(20) %>% 
       gt() %>% 
-      # opt_interactive(
-      #   use_pagination = FALSE,
-      #   use_search = TRUE,
-      #   use_filters = TRUE,
-      #   use_resizers = TRUE,
-      #   use_highlight = TRUE,
-      #   page_size_default = 20
-      # ) %>% 
-      cols_label(#posteam_logo_1 = 'Offense', defteam_logo_1 = 'Defense', 
-                 qtr = 'Quarter',down = 'Down',ydstogo = 'To Go',yrdln = 'Yard Line',
+      cols_label(qtr = 'Quarter',down = 'Down',ydstogo = 'To Go',yrdln = 'Yard Line',
                  yards_gained = 'Yards Gained',playType = 'Play Type', epa = 'EPA',
                  desc = 'Play Description', week = 'Week') %>% 
       cols_label(posteam_wordmark = 'Offense', defteam_wordmark = 'Defense') %>%
@@ -1472,18 +1451,6 @@ server <- function(input, output) {
       data_color(playType, palette = c('red','blue')) %>% 
       gt_img_rows(columns = posteam_wordmark) %>%
       gt_img_rows(columns = defteam_wordmark) 
-      # opt_interactive(
-      #   use_pagination = FALSE,
-      #   use_search = TRUE,
-      #   use_filters = TRUE,
-      #   # use_resizers = TRUE,
-      #   use_compact_mode = TRUE,
-      #   use_highlight = TRUE,
-      #   page_size_default = 20
-      # )
-      # gt_img_rows(columns = posteam_logo_1) %>%
-      # gt_img_rows(columns = defteam_logo_1)
-    
   })
   output$pass_chart <- renderPlot({
     pass_plays <- app_data$full_data %>% 
@@ -1599,7 +1566,7 @@ server <- function(input, output) {
     
     avg_epa <- mean(rush$epa)
     total_runs <- sum(rush$plays)
-    # Create segment coordinates data frame
+
     segments_data <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
@@ -1610,89 +1577,56 @@ server <- function(input, output) {
     ) %>%
       left_join(rush, by = 'gap_side')
     
-    # O-line positions
     oline <- data.frame(
       position = c('LT','LG','C','RG','RT'),
       x = 1:5,
       y = rep(1, 5)
     )
     
-    # Create label coordinates data frame
     labels_data <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
       x = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
-      # x = c(.85, 2.2, 2.55, 3, 3.4, 3.8, 5.1),
-      # y = c(0.995, .99,.995,.99,.995,.99,.995)
       y = rep(1.0035, 7)
     ) %>%
       left_join(rush, by = 'gap_side') %>%
-      mutate(label_text = paste0(round(epa,2),#percent(freq, accuracy = 0.1), 
-                                 "\n(", percent(sr, accuracy = 0.1), " SR)"))
+      mutate(label_text = paste0(round(epa,2),"\n(", percent(sr, accuracy = 0.1), " SR)"))
     
-    # Option 1:
-    # low_color = "#8E44AD"
-    # high_color = "#27AE60"
-    # Option 2:
-    # low_color = '#3B4CC0'
-    # high_color = '#B40426'
     mid_color = "#DDDDDD"
-    # Option 3:
     low_color = '#4B0092'
     high_color = '#1AFF1A'
     
-    
-    # Create label coordinates data frame
     play_totals <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
       x = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
-      # x = c(.85, 2.2, 2.55, 3, 3.4, 3.8, 5.1),
-      # y = c(0.995, .99,.995,.99,.995,.99,.995)
       y = rep(.979, 7)
     ) %>%
       left_join(rush, by = 'gap_side')
     
-    # Create plot
     ggplot() +
-      # Line of Scrimmage
       geom_segment(aes(x = -1, y = 1, xend = 7, yend = 1), 
                    linewidth = 2, lineend = 'butt', linejoin = 'bevel', 
                    color = 'white') +
-      
-      # Run direction arrows (consolidated into one geom_segment call)
       geom_segment(data = segments_data,
                    aes(x = x_start, y = y_start, xend = x_end, yend = y_end, 
                        color = epa, linewidth = freq),
-                   # linewidth = 3,
                    lineend = 'round', linejoin = 'round', 
                    arrow = arrow(type = 'closed',length = unit(0.3, 'inches'))) +
-      
-      # Dot to make lines look more round
       geom_point(aes(x = 3, y = .98), color = '#468944', size = 10) + 
-      
-      # O-line position labels
       geom_shadowtext(data = oline, aes(x = x, y = y, label = position), 
                       fontface = 'bold', size = 10, bg.color = 'grey10') +
-      
-      # Frequency and SR labels
       geom_label(data = labels_data, 
                  aes(x = x, y = y, label = label_text),
+                 color = 'black', fill = 'white',
                  size = 4, lineheight = 0.9) +
-      
-      # Total Plays Labels
       geom_text(data = play_totals, 
                 aes(x = x, y = y, label = plays),
                 size = 10, lineheight = 0.9) +
-      
-      # Color scale: diverging around average SR
       scale_color_gradient2(low = low_color, mid = mid_color, high = high_color,
                             midpoint = avg_epa,
-                            # breaks = c(min(rush_stats$sr), max(rush_stats$sr)),
-                            # labels = percent_format(accuracy = 1),
                             name = "EPA/Play") +
       coord_cartesian(xlim = c(0, 6), ylim = c(0.975, 1.01)) +
-      
       labs(
         title = paste0(team_name, ' Run Plays & QB Scrambles By Location | ', total_runs,' Plays'),
         subtitle = subtitle,
@@ -1750,16 +1684,11 @@ server <- function(input, output) {
                        if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else " • All Qtrs ",
                        if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances")
     
-    # title_line <- 
-    # print(play_table %>% head())
     play_table %>% 
-      select(week, 
-             posteam_wordmark, defteam_wordmark,
-             # posteam_logo_1,defteam_logo_1,
+      select(week, posteam_wordmark, defteam_wordmark,
              qtr, down,ydstogo, yrdln, yards_gained,playType, epa,desc) %>%  
       gt() %>% 
-      cols_label(#posteam_logo_1 = 'Offense', defteam_logo_1 = 'Defense', 
-        qtr = 'Quarter',down = 'Down',ydstogo = 'To Go',yrdln = 'Yard Line',
+      cols_label(qtr = 'Quarter',down = 'Down',ydstogo = 'To Go',yrdln = 'Yard Line',
         yards_gained = 'Yards Gained',playType = 'Play Type', epa = 'EPA',
         desc = 'Play Description', week = 'Week') %>% 
       cols_label(posteam_wordmark = 'Offense', defteam_wordmark = 'Defense') %>%
@@ -1819,10 +1748,7 @@ server <- function(input, output) {
                input$tile_2 == 'EPA/Play' ~ epa,
                input$tile_2 == 'Success Rate' ~ sr,
                input$tile_2 == 'Frequency' ~ -freq
-             )) #%>% 
-    # group_by(posteam) %>%
-    # mutate(freq = plays/sum(plays))
-    # print(pass)
+             )) 
     total_plays <- sum(pass$plays)
     
     ggplot(pass, aes(x = pass_location, y = depth_zone, fill = fill_color)) +
@@ -1887,7 +1813,7 @@ server <- function(input, output) {
     
     avg_epa <- mean(rush$epa)
     total_runs <- sum(rush$plays)
-    # Create segment coordinates data frame
+
     segments_data <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
@@ -1898,81 +1824,53 @@ server <- function(input, output) {
     ) %>%
       left_join(rush, by = 'gap_side')
     
-    # O-line positions
     oline <- data.frame(
       position = c('LT','LG','C','RG','RT'),
       x = 1:5,
       y = rep(1, 5)
     )
     
-    # Create label coordinates data frame
     labels_data <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
       x = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
-      # x = c(.85, 2.2, 2.55, 3, 3.4, 3.8, 5.1),
-      # y = c(0.995, .99,.995,.99,.995,.99,.995)
       y = rep(1.0035, 7)
     ) %>%
       left_join(rush, by = 'gap_side') %>%
-      mutate(label_text = paste0(round(epa,2),#percent(freq, accuracy = 0.1), 
-                                 "\n(", percent(sr, accuracy = 0.1), " SR)"))
+      mutate(label_text = paste0(round(epa,2),"\n(", percent(sr, accuracy = 0.1), " SR)"))
     
-    # Create label coordinates data frame
     play_totals <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
       x = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
-      # x = c(.85, 2.2, 2.55, 3, 3.4, 3.8, 5.1),
-      # y = c(0.995, .99,.995,.99,.995,.99,.995)
       y = rep(.979, 7)
     ) %>%
       left_join(rush, by = 'gap_side')
     
-    # Option 1:
-    # low_color = "#8E44AD"
-    # high_color = "#27AE60"
-    # Option 2:
-    # low_color = '#3B4CC0'
-    # high_color = '#B40426'
+  
     mid_color = "#DDDDDD"
-    # Option 3:
     high_color = '#4B0092'
     low_color = '#1AFF1A'
     
-    # Create plot
     ggplot() +
-      # Line of Scrimmage
       geom_segment(aes(x = -1, y = 1, xend = 7, yend = 1), 
                    linewidth = 2, lineend = 'butt', linejoin = 'bevel', 
                    color = 'white') +
-      
-      # Run direction arrows (consolidated into one geom_segment call)
       geom_segment(data = segments_data,
                    aes(x = x_start, y = y_start, xend = x_end, yend = y_end, 
                        color = epa, linewidth = freq),
-                   # linewidth = 3,
                    lineend = 'round', linejoin = 'round', 
                    arrow = arrow(type = 'closed',length = unit(0.3, 'inches'))) +
-      
-      # Dot to make lines look more round
       geom_point(aes(x = 3, y = .98), color = '#468944', size = 10) + 
-      
-      # O-line position labels
       geom_shadowtext(data = oline, aes(x = x, y = y, label = position), 
                       fontface = 'bold', size = 10, bg.color = 'grey10') +
-      
-      # Frequency and SR labels
       geom_label(data = labels_data, 
-                 aes(x = x, y = y, label = label_text),
+                 aes(x = x, y = y, label = label_text), 
+                 color = 'black', fill = 'white',
                  size = 4, lineheight = 0.9) +
-      
-      # Total Plays Labels
       geom_text(data = play_totals, 
                 aes(x = x, y = y, label = plays),
                 size = 10, lineheight = 0.9) +
-      
-      # Color scale: diverging around average SR
       scale_color_gradient2(low = low_color, mid = mid_color, high = high_color,
                             midpoint = avg_epa,
                             name = "EPA/Play") +

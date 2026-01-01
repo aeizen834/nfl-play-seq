@@ -10,6 +10,7 @@ library(rsconnect)
 library(DT)
 library(shadowtext)
 
+
 split_data_for_display <- function(data, pbp_data) {
   
   n <- nrow(data)
@@ -1267,7 +1268,7 @@ server <- function(input, output) {
         source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | 
                          **Distance From League Average:**
                          <span style='color: #4B0092;'>Purple</span> (Below Average) →
-                         <span style='color: #1AFF1A;'>Green</span> (Above Average)")
+                         <span style='color: #1AFF1A;'>Green</span> (Above Average)<br/>Note: Plays on this tab can be counted twice in the data if it is a part of a three play sequence of the same play type")
             # source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | **Color Scale:** Purple (Poor Performance) → Green (Strong Performance)")
       ) %>%
       # Style the source note

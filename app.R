@@ -606,7 +606,7 @@ create_def_decision_trees <- function(data, subtitle, def_team = 'DET', color = 
     ) +
     # Labels and theming
     labs(
-      title = paste0(team_name, ' Offensive Play Calling Tendancies'),
+      title = paste0(team_name, ' Defensive Play Calling Tendancies'),
       subtitle = subtitle,
       caption = paste0("**Analysis:** @AriEizen | **Data:** nflfastR | 
                          **",color, " League Rank:**

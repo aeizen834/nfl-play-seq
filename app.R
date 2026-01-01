@@ -1631,7 +1631,9 @@ server <- function(input, output) {
       labs(
         title = paste0(team_name, ' Run Plays & QB Scrambles By Location | ', total_runs,' Plays'),
         subtitle = subtitle,
-        caption = "**Analysis:** @arieizen | **Data:** nflfastR | **Arrow color** = EPA/Play | **Label** = EPA/Play (Success Rate) | **Line Width** = Frequency",
+        caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Arrow color** = EPA/Play",
+        # | **Label** = EPA/Play (Success Rate)
+        " | **Line Width** = Frequency"),
         x = '',
         y = ''
       ) +
@@ -1880,7 +1882,9 @@ server <- function(input, output) {
       labs(
         title = paste0(team_name, ' Defensive Run Plays & QB Scrambles By Location | ', total_runs,' Plays'),
         subtitle = subtitle,
-        caption = "**Analysis:** @arieizen | **Data:** nflfastR | **Arrow color** = EPA/Play | **Label** = EPA/Play (Success Rate) | **Line Width** = Frequency",
+        caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Arrow color** = EPA/Play",
+                         # | **Label** = EPA/Play (Success Rate)
+                         " | **Line Width** = Frequency"),
         x = '',
         y = ''
       ) +

@@ -48,7 +48,8 @@ seq_table <- function(play_data, pbp_data){
   seq_chart <- play_data %>% 
     group_by(posteam,seq_group) %>% 
     reframe(epa_per_play = mean(epa),
-            success_rate = mean(success)) %>% 
+            success_rate = mean(success),
+            plays = n()) %>% 
     merge(teams_colors_logos %>% select(team_abbr,team_color, team_color2,team_color3, team_wordmark,team_logo_wikipedia),
           by.x = 'posteam',by.y = 'team_abbr') %>% 
     unique()
@@ -56,7 +57,8 @@ seq_table <- function(play_data, pbp_data){
   whole_totals <- pbp_data %>% 
     group_by(posteam) %>% 
     mutate(total_epa = mean(epa),
-           total_sr = mean(success)) 
+           total_sr = mean(success),
+           plays = n()) 
   
   
   # print(seq_chart)
@@ -83,6 +85,11 @@ seq_table <- function(play_data, pbp_data){
       round(3) %>%
       unique()
     
+    plays <- whole_totals %>% 
+      filter(posteam == tm) %>% 
+      pull(plays) %>% 
+      unique()
+    
     # Get Pass-Pass Metrics
     PP_SR <- seq_chart %>% 
       filter(posteam == tm & seq_group == 'Pass-Pass') %>% 
@@ -92,6 +99,10 @@ seq_table <- function(play_data, pbp_data){
       filter(posteam == tm & seq_group == 'Pass-Pass') %>% 
       pull(epa_per_play) %>% 
       round(3)
+    
+    PP_plays <- seq_chart %>% 
+      filter(posteam == tm & seq_group == 'Pass-Pass') %>% 
+      pull(plays)
     
     # Get Pass-Run Metrics
     PR_SR <- seq_chart %>% 
@@ -103,6 +114,10 @@ seq_table <- function(play_data, pbp_data){
       pull(epa_per_play) %>% 
       round(3)
     
+    PR_plays <- seq_chart %>% 
+      filter(posteam == tm & seq_group == 'Pass-Run') %>% 
+      pull(plays)
+    
     # Get Run-Pass Metrics
     RP_SR <- seq_chart %>% 
       filter(posteam == tm & seq_group == 'Run-Pass') %>% 
@@ -112,6 +127,9 @@ seq_table <- function(play_data, pbp_data){
       filter(posteam == tm & seq_group == 'Run-Pass') %>% 
       pull(epa_per_play) %>% 
       round(3)
+    RP_plays <- seq_chart %>% 
+      filter(posteam == tm & seq_group == 'Run-Pass') %>% 
+      pull(plays)
     
     # Get Run-Run Metrics
     RR_SR <- seq_chart %>% 
@@ -122,6 +140,9 @@ seq_table <- function(play_data, pbp_data){
       filter(posteam == tm & seq_group == 'Run-Run') %>% 
       pull(epa_per_play) %>% 
       round(3)
+    RR_plays <- seq_chart %>% 
+      filter(posteam == tm & seq_group == 'Run-Run') %>% 
+      pull(plays)
     
     team_row <- data.frame(
       posteam = tm,
@@ -132,14 +153,19 @@ seq_table <- function(play_data, pbp_data){
       logo,
       EPA = if (length(EPA) == 0) 0 else EPA,
       SR = if (length(SR) == 0) 0 else SR,
+      plays = if (length(plays) == 0) 0 else plays,
       PP_EPA = if (length(PP_EPA) == 0) 0 else PP_EPA,
       PP_SR = if (length(PP_SR) == 0) 0 else PP_SR,
+      PP_plays = if (length(PP_plays) == 0) 0 else PP_plays,
       PR_EPA = if (length(PR_EPA) == 0) 0 else PR_EPA,
       PR_SR = if (length(PR_SR) == 0) 0 else PR_SR,
+      PR_plays = if (length(PR_plays) == 0) 0 else PR_plays,
       RP_EPA = if (length(RP_EPA) == 0) 0 else RP_EPA,
       RP_SR = if (length(RP_SR) == 0) 0 else RP_SR,
+      RP_plays = if (length(RP_plays) == 0) 0 else RP_plays,
       RR_EPA = if (length(RR_EPA) == 0) 0 else RR_EPA,
-      RR_SR = if (length(RR_SR) == 0) 0 else RR_SR
+      RR_SR = if (length(RR_SR) == 0) 0 else RR_SR,
+      RR_plays = if (length(RR_plays) == 0) 0 else RR_plays
     )
     
     new_table <- bind_rows(new_table, team_row)
@@ -160,7 +186,6 @@ calculate_league_averages <- function(play_data, pbp_data) {
             SR = mean(success))
   
   
-  # Get Pass-Pass Metrics
   SR <- lg_avg %>% 
     pull(SR) %>%
     unique()
@@ -169,6 +194,9 @@ calculate_league_averages <- function(play_data, pbp_data) {
     pull(EPA) %>% 
     round(3) %>%
     unique()
+  
+  plays <- (pbp_data %>% nrow()/pbp_data %>% pull(posteam) %>% unique() %>% length()) %>%
+    round()
   
   # Get Pass-Pass Metrics
   PP_SR <- seq_avg %>% 
@@ -180,6 +208,10 @@ calculate_league_averages <- function(play_data, pbp_data) {
     pull(EPA) %>% 
     round(3)
   
+  PP_plays <- (play_data %>% filter(seq_group == 'Pass-Pass') %>% nrow()/
+                 play_data %>% filter(seq_group == 'Pass-Pass') %>% pull(posteam) %>% unique() %>% length()) %>%
+    round()
+  
   # Get Pass-Run Metrics
   PR_SR <- seq_avg %>% 
     filter(seq_group == 'Pass-Run') %>% 
@@ -189,6 +221,10 @@ calculate_league_averages <- function(play_data, pbp_data) {
     filter(seq_group == 'Pass-Run') %>% 
     pull(EPA) %>% 
     round(3)
+  
+  PR_plays <- (play_data %>% filter(seq_group == 'Pass-Run') %>% nrow()/
+                 play_data %>% filter(seq_group == 'Pass-Run') %>% pull(posteam) %>% unique() %>% length()) %>%
+    round()
   
   # Get Run-Pass Metrics
   RP_SR <- seq_avg %>% 
@@ -200,6 +236,10 @@ calculate_league_averages <- function(play_data, pbp_data) {
     pull(EPA) %>% 
     round(3)
   
+  RP_plays <- (play_data %>% filter(seq_group == 'Run-Pass') %>% nrow()/
+                 play_data %>% filter(seq_group == 'Run-Pass') %>% pull(posteam) %>% unique() %>% length()) %>%
+    round()
+  
   # Get Run-Run Metrics
   RR_SR <- seq_avg %>% 
     filter(seq_group == 'Run-Run') %>% 
@@ -210,6 +250,11 @@ calculate_league_averages <- function(play_data, pbp_data) {
     pull(EPA) %>% 
     round(3)
   
+  RR_plays <- (play_data %>% filter(seq_group == 'Run-Run') %>% nrow()/
+                 play_data %>% filter(seq_group == 'Run-Run') %>% pull(posteam) %>% unique() %>% length()) %>%
+    round()
+  
+  
   team_row <- data.frame(
     posteam = 'NFL',
     primary = NA, 
@@ -219,14 +264,19 @@ calculate_league_averages <- function(play_data, pbp_data) {
     # logo = NA,
     EPA = if (length(EPA) == 0) 0 else EPA,
     SR = if (length(SR) == 0) 0 else SR,
+    plays = if (length(plays) == 0) 0 else plays,
     PP_EPA = if (length(PP_EPA) == 0) 0 else PP_EPA,
     PP_SR = if (length(PP_SR) == 0) 0 else PP_SR,
+    PP_plays = if (length(PP_plays) == 0) 0 else PP_plays,
     PR_EPA = if (length(PR_EPA) == 0) 0 else PR_EPA,
     PR_SR = if (length(PR_SR) == 0) 0 else PR_SR,
+    PR_plays = if (length(PR_plays) == 0) 0 else PR_plays,
     RP_EPA = if (length(RP_EPA) == 0) 0 else RP_EPA,
     RP_SR = if (length(RP_SR) == 0) 0 else RP_SR,
+    RP_plays = if (length(RP_plays) == 0) 0 else RP_plays,
     RR_EPA = if (length(RR_EPA) == 0) 0 else RR_EPA,
     RR_SR = if (length(RR_SR) == 0) 0 else RR_SR,
+    RR_plays = if (length(RR_plays) == 0) 0 else RR_plays,
     rank = 'AVG',
     posteam_2 = 'NFL',
     primary_2 = NA, 
@@ -237,14 +287,19 @@ calculate_league_averages <- function(play_data, pbp_data) {
     # logo = NA,
     EPA_2 = if (length(EPA) == 0) 0 else EPA,
     SR_2 = if (length(SR) == 0) 0 else SR,
+    plays_2 = if (length(plays) == 0) 0 else plays,
     PP_EPA_2 = if (length(PP_EPA) == 0) 0 else PP_EPA,
     PP_SR_2 = if (length(PP_SR) == 0) 0 else PP_SR,
+    PP_plays_2 = if (length(PP_plays) == 0) 0 else PP_plays,
     PR_EPA_2 = if (length(PR_EPA) == 0) 0 else PR_EPA,
     PR_SR_2 = if (length(PR_SR) == 0) 0 else PR_SR,
+    PR_plays_2 = if (length(PR_plays) == 0) 0 else PR_plays,
     RP_EPA_2 = if (length(RP_EPA) == 0) 0 else RP_EPA,
     RP_SR_2 = if (length(RP_SR) == 0) 0 else RP_SR,
+    RP_plays_2 = if (length(RP_plays) == 0) 0 else RP_plays,
     RR_EPA_2 = if (length(RR_EPA) == 0) 0 else RR_EPA,
-    RR_SR_2 = if (length(RR_SR) == 0) 0 else RR_SR
+    RR_SR_2 = if (length(RR_SR) == 0) 0 else RR_SR,
+    RR_plays_2 = if (length(RR_plays) == 0) 0 else RR_plays
   )
   
   return(team_row)
@@ -478,12 +533,15 @@ create_off_decision_trees <- function(data, subtitle, off_team = 'DET', color = 
                          <span style='color: #1AFF1A;'>Green</span> (Above Average)")
       # caption = "@arieizen | data: nflfastR"
     ) +
-    theme_void() +
+    # theme_void() +
     theme(
       plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary #, family = 'Roboto'
       ),
       plot.subtitle = element_text(size = 20, hjust = 0.5),
       # plot.caption = element_text(size = 14,face = "bold"),
+      axis.title = element_blank(),
+      axis.ticks = element_blank(),
+      axis.text = element_blank(),
       plot.caption = element_markdown(size = 18, hjust = 0),
       legend.position = "none",
       plot.background = element_rect(fill = "white", color = NA),
@@ -614,11 +672,14 @@ create_def_decision_trees <- function(data, subtitle, def_team = 'DET', color = 
                          <span style='color: #1AFF1A;'>Green</span> (Above Average)")
       # caption = "@arieizen | data: nflfastR"
     ) +
-    theme_void() +
+    # theme_void() +
     theme(
       plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary),
       plot.subtitle = element_text(size = 20, hjust = 0.5),
       plot.caption = element_markdown(size = 18, hjust = 0),
+      axis.title = element_blank(),
+      axis.ticks = element_blank(),
+      axis.text = element_blank(),
       legend.position = "none",
       plot.background = element_rect(fill = "white", color = NA),
       panel.background = element_rect(fill = "white", color = NA),
@@ -639,23 +700,20 @@ load_app_data <- function(){
 }
 
 apply_theme <- function(){
-  # chart +
-    theme(
-      plot.background = element_rect(fill = "#468944", color = NA),
-      panel.background = element_rect(fill = "#468944", color = NA),
-      panel.border = element_rect(colour = 'white', fill = NA, linewidth = 2.5),
-      axis.text = element_text(color = 'white', face = 'bold', size = 14),
-      axis.title.y = element_text(color = 'white', face = 'bold', size = 16, angle = 90),
-      axis.title.x = element_text(color = 'white', face = 'bold', size = 16),
-      legend.position = "none",
-      plot.title = element_text(face = "bold", size = 20, hjust = 0.5, color = 'white',
-                                margin = margin(t = 10, b = 5)),
-      plot.subtitle = element_text(size = 16, hjust = 0.5, color = 'white',
-                                   margin = margin(b = 10)),
-      plot.caption = element_markdown(face = "bold", size = 14, color = 'white',hjust = 0, 
-                                      margin = margin(t = 10, b = 5)),
-      plot.margin = margin(10, 10, 10, 10)
-    )
+  theme(
+    plot.background = element_rect(fill = "#468944", color = NA),
+    panel.background = element_rect(fill = "#468944", color = NA),
+    panel.border = element_rect(colour = 'white', fill = NA, linewidth = 2.5),
+    axis.text = element_text(color = 'white', face = 'bold', size = 14),
+    axis.title.y = element_text(color = 'white', face = 'bold', size = 16, angle = 90),
+    axis.title.x = element_text(color = 'white', face = 'bold', size = 16),
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 20, hjust = 0.5, color = 'white'),
+    plot.subtitle = element_text(size = 16, hjust = 0.5, color = 'white'),
+    plot.caption = element_markdown(face = "bold", size = 14, color = 'white', hjust = 0),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank()
+  )
 }
 # Define UI for application that draws a histogram
 icon <- div(
@@ -953,8 +1011,8 @@ ui <- navbarPage(
                         ),
                         column(2,
                                # div(style = "margin-top: 5px;",
-                               #     strong("Distance:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('dist',"Distance:", 
+                               #     strong("Distance To Go:", style = "font-size: 14px;"),
+                                   checkboxGroupInput('dist',"Distance To Go:", 
                                                       choices = c('10+','10-7','6-4','3-1','GTG'), 
                                                       selected = c('10+','10-7','6-4','3-1','GTG'), inline = TRUE)
                                # )
@@ -981,13 +1039,15 @@ ui <- navbarPage(
            ),
            fluidRow(column(6,
                            # div(style = "display: flex; flex-direction: column; height: 100%;",
-                               plotOutput('pass_chart'#, height = "50%"
-                                          ),
-                               plotOutput('run_chart'#, height = "50%"
-                                          )
+                           plotOutput('pass_chart'#, height = "50%"
+                           )
                            # )
-                           ),
-                    column(6,gt_output('pbp_table')))
+           ),
+           column(6,
+                  plotOutput('run_chart'#, height = "50%"
+                  ))),
+           fluidRow(
+             column(12,gt_output('pbp_table')))
            ),
   #############################################################################
   # TAB #5: Defensive Down and Distance Tendencies
@@ -1027,8 +1087,8 @@ ui <- navbarPage(
                         ),
                         column(2,
                                # div(style = "margin-top: 5px;",
-                               #     strong("Distance:", style = "font-size: 14px;"),
-                               checkboxGroupInput('dist_2',"Distance:", 
+                               #     strong("Distance To Go:", style = "font-size: 14px;"),
+                               checkboxGroupInput('dist_2',"Distance To Go:", 
                                                   choices = c('10+','10-7','6-4','3-1','GTG'), 
                                                   selected = c('10+','10-7','6-4','3-1','GTG'), inline = TRUE)
                                # )
@@ -1056,12 +1116,14 @@ ui <- navbarPage(
            fluidRow(column(6,
                            # div(style = "display: flex; flex-direction: column; height: 100%;",
                            plotOutput('pass_chart_def'#, height = "50%"
-                           ),
-                           plotOutput('run_chart_def'#, height = "50%"
                            )
                            # )
            ),
-           column(6,gt_output('pbp_table_def')))
+           column(6,
+                  plotOutput('run_chart_def'#, height = "50%"
+                  ))),
+           fluidRow(
+             column(12,gt_output('pbp_table_def')))
   )
   )
   #############################################################################
@@ -1073,7 +1135,9 @@ server <- function(input, output) {
   # Action for Tab 1
   applied_overview <- reactiveValues(
     week = c(app_data$all_seq %>% pull(week) %>% min(na.rm = TRUE),
-             app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE)),
+             if_else(app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE) > 18,
+                     18,
+                     app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE))),
     wp = c(5,95),
     down = 1:4,
     qtr = 1:5
@@ -1110,7 +1174,9 @@ server <- function(input, output) {
     
     table_split <- split_data_for_display(play_table) %>% 
       bind_rows(lg_avg) %>% 
-      relocate(rank_2, .before = wordmark_2)
+      relocate(rank_2, .before = wordmark_2) #%>% 
+      # select(-PP_plays,-PR_plays,-RR_plays,-RP_plays,
+      #        -PP_plays_2,-PR_plays_2,-RR_plays_2,-RP_plays_2)
     
     tab_subtitle <- paste0("2025 Season • Weeks ", min(pbp$week), "-", max(pbp$week), 
                           " • Win Probability ", min(applied_overview$wp), "%-", max(applied_overview$wp), "%",
@@ -1134,7 +1200,9 @@ server <- function(input, output) {
       cols_move_to_start(rank) %>% 
       # Hide color and team abbreviation columns
       cols_hide(c(primary, secondary, tertiary, posteam,
-                  primary_2, secondary_2, tertiary_2, posteam_2)) %>% 
+                  primary_2, secondary_2, tertiary_2, posteam_2,
+                  PP_plays,PR_plays,RR_plays,RP_plays,
+                  PP_plays_2,PR_plays_2,RR_plays_2,RP_plays_2)) %>% 
       
       # MAIN STYLING - Background and text colors
       tab_style(
@@ -1170,34 +1238,34 @@ server <- function(input, output) {
       ) %>%
       
       ## LEFT COLUMN SPANNERS
-      tab_spanner('Overall Stats', columns = c(SR, EPA)) %>%
-      tab_spanner('Pass-Pass', columns = c(PP_SR, PP_EPA)) %>%
-      tab_spanner('Pass-Run', columns = c(PR_SR, PR_EPA)) %>%
-      tab_spanner('Run-Pass', columns = c(RP_SR, RP_EPA)) %>%
-      tab_spanner('Run-Run', columns = c(RR_SR, RR_EPA)) %>%
+      tab_spanner('Overall Stats', columns = c(SR, EPA, plays)) %>%
+      tab_spanner('Pass-Pass', columns = c(PP_SR, PP_EPA, PP_plays)) %>%
+      tab_spanner('Pass-Run', columns = c(PR_SR, PR_EPA, PR_plays)) %>%
+      tab_spanner('Run-Pass', columns = c(RP_SR, RP_EPA, RP_plays)) %>%
+      tab_spanner('Run-Run', columns = c(RR_SR, RR_EPA, RR_plays)) %>%
       
       ## RIGHT COLUMN SPANNERS
-      tab_spanner('Overall Stats ', columns = c(SR_2, EPA_2)) %>%
-      tab_spanner('Pass-Pass ', columns = c(PP_SR_2, PP_EPA_2)) %>%
-      tab_spanner('Pass-Run ', columns = c(PR_SR_2, PR_EPA_2)) %>%
-      tab_spanner('Run-Pass ', columns = c(RP_SR_2, RP_EPA_2)) %>%
-      tab_spanner('Run-Run ', columns = c(RR_SR_2, RR_EPA_2)) %>%
+      tab_spanner('Overall Stats ', columns = c(SR_2, EPA_2, plays_2)) %>%
+      tab_spanner('Pass-Pass ', columns = c(PP_SR_2, PP_EPA_2, PP_plays_2)) %>%
+      tab_spanner('Pass-Run ', columns = c(PR_SR_2, PR_EPA_2, PR_plays_2)) %>%
+      tab_spanner('Run-Pass ', columns = c(RP_SR_2, RP_EPA_2, RP_plays_2)) %>%
+      tab_spanner('Run-Run ', columns = c(RR_SR_2, RR_EPA_2, RR_plays_2)) %>%
       
       # Column labels
       cols_label(
         # Left side
-        PP_SR = 'SR', PP_EPA = 'EPA',
-        PR_SR = 'SR', PR_EPA = 'EPA',
-        RR_SR = 'SR', RR_EPA = 'EPA',
-        RP_SR = 'SR', RP_EPA = 'EPA',
-        SR = 'SR', EPA = 'EPA',
+        PP_SR = 'SR', PP_EPA = 'EPA', PP_plays = 'Plays',
+        PR_SR = 'SR', PR_EPA = 'EPA', PR_plays = 'Plays',
+        RR_SR = 'SR', RR_EPA = 'EPA', RR_plays = 'Plays',
+        RP_SR = 'SR', RP_EPA = 'EPA', RP_plays = 'Plays',
+        SR = 'SR', EPA = 'EPA', plays = 'Plays',
         wordmark = 'Team', rank = 'Rank',
         # Right side
-        PP_SR_2 = 'SR', PP_EPA_2 = 'EPA',
-        PR_SR_2 = 'SR', PR_EPA_2 = 'EPA',
-        RR_SR_2 = 'SR', RR_EPA_2 = 'EPA',
-        RP_SR_2 = 'SR', RP_EPA_2 = 'EPA',
-        SR_2 = 'SR', EPA_2 = 'EPA',
+        PP_SR_2 = 'SR', PP_EPA_2 = 'EPA', PP_plays_2 = 'Plays',
+        PR_SR_2 = 'SR', PR_EPA_2 = 'EPA', PR_plays_2 = 'Plays',
+        RR_SR_2 = 'SR', RR_EPA_2 = 'EPA', RR_plays_2 = 'Plays',
+        RP_SR_2 = 'SR', RP_EPA_2 = 'EPA', RP_plays_2 = 'Plays',
+        SR_2 = 'SR', EPA_2 = 'EPA', plays_2 = 'Plays',
         wordmark_2 = 'Team', rank_2 = 'Rank'
       ) %>% 
       
@@ -1205,33 +1273,41 @@ server <- function(input, output) {
       fmt_percent(columns = c(SR, PP_SR, PR_SR, RP_SR, RR_SR, 
                               SR_2, PP_SR_2, PR_SR_2, RP_SR_2, RR_SR_2), 
                   decimals = 1) %>% 
+      
       # COLOR CODING: Purple (bad) to Green (good) gradient
       # Left side color coding
-      # Should I use rank for color or difference from lg average?
-      data_color(columns = EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
-      data_color(columns = EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
-      data_color(columns = SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>% 
-      data_color(columns = PP_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = PP_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
-      data_color(columns = PR_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$PR_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = PR_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$PR_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RP_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = RP_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RR_EPA, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = RR_SR, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>% 
+      data_color(columns = EPA, palette = c(low_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
+      data_color(columns = SR, palette = c(low_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>% 
+      data_color(columns = plays, palette = c(low_color, high_color), domain = range(play_table$plays, na.rm = TRUE)) %>% 
+      data_color(columns = PP_EPA, palette = c(low_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = PP_SR, palette = c(low_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
+      data_color(columns = PP_plays, palette = c(low_color, high_color), domain = range(play_table$PP_plays, na.rm = TRUE)) %>%
+      data_color(columns = PR_EPA, palette = c(low_color, high_color), domain = range(play_table$PR_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = PR_SR, palette = c(low_color, high_color), domain = range(play_table$PR_SR, na.rm = TRUE)) %>% 
+      data_color(columns = PR_plays, palette = c(low_color, high_color), domain = range(play_table$PR_plays, na.rm = TRUE)) %>%
+      data_color(columns = RP_EPA, palette = c(low_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = RP_SR, palette = c(low_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
+      data_color(columns = RP_plays, palette = c(low_color, high_color), domain = range(play_table$RP_plays, na.rm = TRUE)) %>%
+      data_color(columns = RR_EPA, palette = c(low_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = RR_SR, palette = c(low_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>% 
+      data_color(columns = RR_plays, palette = c(low_color, high_color), domain = range(play_table$RR_plays, na.rm = TRUE)) %>%
       
       # Right side color coding
-      data_color(columns = EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
-      data_color(columns = SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>%
-      data_color(columns = PP_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = PP_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
-      data_color(columns = PR_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$PR_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = PR_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$PR_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RP_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = RP_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RR_EPA_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
-      data_color(columns = RR_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>% 
-      data_color(columns = RR_SR_2, palette = c(low_color,mid_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>%       
+      data_color(columns = EPA_2, palette = c(low_color, high_color), domain = range(play_table$EPA, na.rm = TRUE)) %>% 
+      data_color(columns = SR_2, palette = c(low_color, high_color), domain = range(play_table$SR, na.rm = TRUE)) %>% 
+      data_color(columns = plays_2, palette = c(low_color, high_color), domain = range(play_table$plays, na.rm = TRUE)) %>% 
+      data_color(columns = PP_EPA_2, palette = c(low_color, high_color), domain = range(play_table$PP_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = PP_SR_2, palette = c(low_color, high_color), domain = range(play_table$PP_SR, na.rm = TRUE)) %>% 
+      data_color(columns = PP_plays_2, palette = c(low_color, high_color), domain = range(play_table$PP_plays, na.rm = TRUE)) %>%
+      data_color(columns = PR_EPA_2, palette = c(low_color, high_color), domain = range(play_table$PR_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = PR_SR_2, palette = c(low_color, high_color), domain = range(play_table$PR_SR, na.rm = TRUE)) %>% 
+      data_color(columns = PR_plays_2, palette = c(low_color, high_color), domain = range(play_table$PR_plays, na.rm = TRUE)) %>%
+      data_color(columns = RP_EPA_2, palette = c(low_color, high_color), domain = range(play_table$RP_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = RP_SR_2, palette = c(low_color, high_color), domain = range(play_table$RP_SR, na.rm = TRUE)) %>% 
+      data_color(columns = RP_plays_2, palette = c(low_color, high_color), domain = range(play_table$RP_plays, na.rm = TRUE)) %>%
+      data_color(columns = RR_EPA_2, palette = c(low_color, high_color), domain = range(play_table$RR_EPA, na.rm = TRUE)) %>% 
+      data_color(columns = RR_SR_2, palette = c(low_color, high_color), domain = range(play_table$RR_SR, na.rm = TRUE)) %>% 
+      data_color(columns = RR_plays_2, palette = c(low_color, high_color), domain = range(play_table$RR_plays, na.rm = TRUE)) %>%  
       # Add team logos/wordmarks
       gt_img_rows(wordmark, height = 25) %>% 
       gt_img_rows(wordmark_2, height = 25) %>% 
@@ -1268,8 +1344,9 @@ server <- function(input, output) {
         source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | 
                          **Distance From League Average:**
                          <span style='color: #4B0092;'>Purple</span> (Below Average) →
-                         <span style='color: #1AFF1A;'>Green</span> (Above Average)<br/>Note: Plays on this tab can be counted twice in the data if it is a part of a three play sequence of the same play type")
-            # source_note = md("**Analysis:** @AriEizen | **Data:** nflfastR | **Color Scale:** Purple (Poor Performance) → Green (Strong Performance)")
+                         <span style='color: #1AFF1A;'>Green</span> (Above Average)
+                         <br/>**Success Rate (SR):** Binary measure of how often a team keeps drives on schedule | **EPA/Play (EPA):** Measures how much a play impacts a team's scoring chance 
+                         <br/>Note: Plays on this tab can be counted twice in the data if it is a part of a three play sequence of the same play type")
       ) %>%
       # Style the source note
       tab_style(
@@ -1292,7 +1369,9 @@ server <- function(input, output) {
                                                SR, EPA, PP_SR, PP_EPA, PR_SR, PR_EPA, 
                                                RP_SR, RP_EPA, RR_SR, RR_EPA,
                                                SR_2, EPA_2, PP_SR_2, PP_EPA_2, PR_SR_2, PR_EPA_2, 
-                                               RP_SR_2, RP_EPA_2, RR_SR_2, RR_EPA_2)) %>% 
+                                               RP_SR_2, RP_EPA_2, RR_SR_2, RR_EPA_2,
+                                               plays, PP_plays, PR_plays, RP_plays, RR_plays,
+                                               plays_2, PP_plays_2, PR_plays_2, RP_plays_2, RR_plays_2)) %>% 
       tab_style(
         style = cell_borders( sides = "top", color = "#E63946",
                               weight = px(3), style = "solid"),
@@ -1316,18 +1395,21 @@ server <- function(input, output) {
           columns = c(EPA, SR, PP_EPA, PP_SR, PR_EPA, PR_SR, 
                       RP_EPA, RP_SR, RR_EPA, RR_SR,
                       EPA_2, SR_2, PP_EPA_2, PP_SR_2, PR_EPA_2, PR_SR_2,
-                      RP_EPA_2, RP_SR_2, RR_EPA_2, RR_SR_2),
+                      RP_EPA_2, RP_SR_2, RR_EPA_2, RR_SR_2,
+                      plays, PP_plays, PR_plays, RP_plays, RR_plays,
+                      plays_2, PP_plays_2, PR_plays_2, RP_plays_2, RR_plays_2),
           rows = rank == "AVG"
         )
-      )
-    
+      )    
   })
   
   # Action for Tab 2
   applied_overview_2 <- reactiveValues(
     tm = 'ARI',
     week = c(app_data$all_seq %>% pull(week) %>% min(na.rm = TRUE),
-             app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE)),
+             if_else(app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE) > 18,
+                     18,
+                     app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE))),
     wp = c(5,95),
     down = 1:4,
     qtr = 1:5
@@ -1364,7 +1446,9 @@ server <- function(input, output) {
   applied_overview_3 <- reactiveValues(
     tm = 'ARI',
     week = c(app_data$all_seq %>% pull(week) %>% min(na.rm = TRUE),
-             app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE)),
+             if_else(app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE) > 18,
+                     18,
+                     app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE))),
     wp = c(5,95),
     down = 1:4,
     qtr = 1:5
@@ -1401,7 +1485,9 @@ server <- function(input, output) {
   applied_overview_4 <- reactiveValues(
     tm = 'ARI',
     week = c(app_data$all_seq %>% pull(week) %>% min(na.rm = TRUE),
-             app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE)),
+             if_else(app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE) > 18,
+                     18,
+                     app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE))),
     wp = c(5,95),
     dist = c('10+','10-7','6-4','3-1','GTG'),
     down = 1:4,
@@ -1521,7 +1607,7 @@ server <- function(input, output) {
         subtitle = subtitle,
         caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Tile Color** = ", input$tile),
         x = 'Pass Location',
-        y = 'Pass Depth'
+        y = 'Air Yards'
       ) +
       coord_cartesian(xlim = c(1.1,2.9), ylim = c(1.1,3.9)) +
       apply_theme()
@@ -1637,7 +1723,7 @@ server <- function(input, output) {
         x = '',
         y = ''
       ) +
-      theme_void() +
+      # theme_void() +
       apply_theme() +
       theme(
         axis.text = element_blank()
@@ -1648,7 +1734,9 @@ server <- function(input, output) {
   applied_overview_5 <- reactiveValues(
     tm = 'ARI',
     week = c(app_data$all_seq %>% pull(week) %>% min(na.rm = TRUE),
-             app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE)),
+             if_else(app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE) > 18,
+                     18,
+                     app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE))),
     wp = c(5,95),
     dist = c('10+','10-7','6-4','3-1','GTG'),
     down = 1:4,
@@ -1770,7 +1858,7 @@ server <- function(input, output) {
         subtitle = subtitle,
         caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Tile Color** = ", input$tile_2),
         x = 'Pass Location',
-        y = 'Pass Depth',
+        y = 'Air Yards',
         x = '',
         y = ''
       ) +
@@ -1888,7 +1976,7 @@ server <- function(input, output) {
         x = '',
         y = ''
       ) +
-      theme_void() +
+      # theme_void() +
       apply_theme() +
       theme(
         axis.text = element_blank()

@@ -20,27 +20,57 @@ library(gtExtras)
 existing_ids <- read_csv('NFL pbp.csv', show_col_types = F) |>
   pull(game_id) |>
   unique()
+
+##### Personnel Classifications
+classify_personnel <- function(offense_personnel) {
+  
+  # Special teams personnel (punt, FG, kickoff) never lists a QB — the
+  # punter/kicker takes the snap instead — so absence of QB is a reliable
+  # signal to bucket these (and any other non-offensive-skill package,
+  # e.g. all-defensive personnel lined up as a "hands team") as 'Other'
+  # rather than misreading them as some flavor of "00p".
+  has_qb <- str_detect(offense_personnel, "\\bQB\\b")
+  
+  rb_count <- str_extract(offense_personnel, "\\d+(?=\\s*RB)") %>%
+    as.integer() %>% replace_na(0L)
+  
+  # A fullback lines up in the same backfield slot as a traditional
+  # running back for personnel-grouping purposes (standard NFL
+  # convention: "1 FB, 1 TE" is 11 personnel, same as "1 RB, 1 TE"),
+  # so FB count folds into the same "backs" tally as RB.
+  fb_count <- str_extract(offense_personnel, "\\d+(?=\\s*FB)") %>%
+    as.integer() %>% replace_na(0L)
+  
+  te_count <- str_extract(offense_personnel, "\\d+(?=\\s*TE)") %>%
+    as.integer() %>% replace_na(0L)
+  
+  backs <- rb_count + fb_count
+  code <- paste0(backs, te_count, "p")
+  
+  # Only the 10 standard groupings are recognized; anything else (2-QB
+  # trick formations, 0/4+ TE jumbo packages, 3-RB goal-line sets, etc.)
+  # is genuinely rare and falls to 'Other' rather than cluttering the
+  # filter with one-off codes.
+  valid_groupings <- c('00p','01p','10p','11p','12p','13p',
+                       '20p','21p','22p','23p')
+  
+  case_when(
+    !has_qb ~ "Other",
+    code %in% valid_groupings ~ code,
+    TRUE ~ "Other"
+  )
+}
+#####
 ###############################################################################
 formations <- load_participation(seasons = most_recent_season()) |> 
-  filter(!(nflverse_game_id %in% existing_ids)) |> 
-  mutate(offense_p = case_when(
-    grepl('1 RB',offense_personnel) & grepl('1 TE',offense_personnel) ~ '11p',
-    grepl('1 FB',offense_personnel) & grepl('1 TE',offense_personnel) ~ '11p',
-    grepl('1 RB',offense_personnel) & grepl('2 TE',offense_personnel) ~ '12p',
-    grepl('1 RB',offense_personnel) & grepl('3 TE',offense_personnel) ~ '13p',
-    grepl('2 RB',offense_personnel) & grepl('1 TE',offense_personnel) ~ '21p',
-    grepl('2 RB',offense_personnel) & grepl('3 WR',offense_personnel) ~ '20p',
-    grepl('4 WR',offense_personnel) & grepl('1 TE',offense_personnel) ~ '01p',
-    grepl('3 WR',offense_personnel) & grepl('2 TE',offense_personnel) ~ '02p',
-    grepl('5 WR',offense_personnel) ~ '00p',
-    TRUE ~ 'Other'
-  )) |> 
+  filter(!(nflverse_game_id %in% existing_ids)) |>
+  mutate(offense_p = classify_personnel(offense_personnel)) |>
   # filter(!is.na(offense_formation)) |> 
   select(nflverse_game_id, play_id, offense_formation, offense_personnel, offense_p) |> 
   rename(game_id = nflverse_game_id)
 
 play_by_play <- load_pbp(seasons = most_recent_season()) %>% 
-  filter(!(game_id %in% existing_ids)) |> 
+  filter(!(game_id %in% existing_ids)) |>
   clean_pbp() %>% 
   select(game_id,week,season,season_type,posteam,defteam,drive,play_id,qtr,down,ydstogo,
          goal_to_go,wp,play_type,play_type_nfl,desc,epa,success,yards_gained,
@@ -113,11 +143,11 @@ for (i in 1:4) {
 }
 
 charting_data <- nflreadr::load_ftn_charting(most_recent_season()) %>% 
-  filter(!(nflverse_game_id %in% existing_ids)) |> 
+  filter(!(nflverse_game_id %in% existing_ids)) |>
   select(-week, -season)
 
 play_data <- load_pbp(most_recent_season()) %>%
-  filter(!(game_id %in% existing_ids)) |> 
+  filter(!(game_id %in% existing_ids)) |>
   clean_pbp() %>% 
   merge(charting_data, by.x = c('game_id','play_id'), by.y = c('nflverse_game_id','nflverse_play_id'), all.x = TRUE) %>% 
   mutate(

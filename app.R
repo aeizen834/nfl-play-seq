@@ -1,4 +1,6 @@
 library(shiny)
+library(shinyjs)
+library(shinyWidgets)
 library(scales)
 library(bslib)
 library(tidyverse)
@@ -63,9 +65,8 @@ seq_table <- function(play_data, pbp_data){
   
   # print(seq_chart)
   new_table <- c()
-  for (k in 1:length(unique(seq_chart$posteam))) {
-    tms <- seq_chart %>% pull(posteam) %>% unique()
-    tm <- tms[k]
+  tms <- seq_chart %>% pull(posteam) %>% unique()
+  for (tm in tms) {
     primary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color) %>% unique() 
     secondary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color2) %>% unique() 
     tertiary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color3) %>% unique()
@@ -150,7 +151,7 @@ seq_table <- function(play_data, pbp_data){
       secondary,
       tertiary,
       wordmark,
-      logo,
+      # logo,
       EPA = if (length(EPA) == 0) 0 else EPA,
       SR = if (length(SR) == 0) 0 else SR,
       plays = if (length(plays) == 0) 0 else plays,
@@ -414,282 +415,63 @@ calculate_sequence_frequencies <- function(play_data, side = 'Off') {
   return(frequency_data)
 }
 
-create_off_decision_trees <- function(data, subtitle, off_team = 'DET', color = 'EPA/Play') {
+create_sequence_matrix <- function(data, subtitle, team = 'DET', side = 'Off', color = 'EPA/Play') {
   
+  team_col <- if (side == 'Off') 'posteam' else 'defteam'
+  n_teams <- data %>% pull(.data[[team_col]]) %>% n_distinct()
   
-  freq_data <- data %>% 
-    filter(posteam == off_team)
-  
-  logo_data <- data.frame(
-    x = 1.5,
-    y = 1.5,
-    team = off_team
-  )
+  freq_data <- data %>%
+    filter(.data[[team_col]] == team)
   
   team_name <- freq_data %>% pull(team_name) %>% unique()
   primary <- freq_data %>% pull(team_color) %>% unique()
   secondary <- freq_data %>% pull(team_color2) %>% unique()
   third <- freq_data %>% pull(team_color3) %>% unique()
   
-  # Option 1:
-  # low_color = "#8E44AD"
-  # high_color = "#27AE60"
-  # Option 2:
-  # low_color = '#3B4CC0'
-  # high_color = '#B40426'
-  mid_color = "#DDDDDD"
-  # Option 3:
-  high_color = '#4B0092'
-  low_color = '#1AFF1A'
+  mid_color <- "#DDDDDD"
+  low_color <- if (side == 'Off') '#4B0092' else '#1AFF1A'
+  high_color <- if (side == 'Off') '#1AFF1A' else '#4B0092'
   
-  # Process data for all teams
-  tree_data <- freq_data %>%
+  tile_data <- freq_data %>%
     mutate(
-      first_play = t_last_play,
-      second_play = playType,
-      x_root = ifelse(first_play == "Pass", 0.5, 2.5),
-      x_end = case_when(
-        first_play == "Pass" & second_play == "Pass" ~ 0,
-        first_play == "Pass" & second_play == "Run" ~ 1,
-        first_play == "Run" & second_play == "Pass" ~ 2,
-        first_play == "Run" & second_play == "Run" ~ 3,
-      ),
-      y_root = 2,
-      y_end = 1,
-      # Compact labels for space efficiency
-      edge_label = paste0(round(frequency * 100), "%"),
-    )
-  if (color == 'EPA/Play'){
-    tree_data <- tree_data %>% 
-      mutate(
-        first_epa_diff = first_epa_rk,
-        epa_diff = second_epa_rk
-      )
-  } else {
-    tree_data <- tree_data %>% 
-      mutate(
-        first_epa_diff = first_SR_rk,
-        epa_diff = second_SR_rk
-      )
-  }
-  
-  tree_data <- tree_data %>% 
-    mutate(
-      first_play = paste0('Any ',t_last_play),
-      second_play = paste0(playType, ' after ', t_last_play),
-      # Create compact node labels
-      root_label = paste0(first_play, "\nEPA: ", round(first_epa_play, 2)," (",first_epa_rk,")", 
-                          "\nSR: ", round(first_SR * 100), "%", " (",first_SR_rk,")"),
-      end_label = paste0(second_play, "\nEPA: ", round(epa_play, 2), " (",second_epa_rk,")",
-                         "\nSR: ", round(SR * 100), "%", " (",second_SR_rk,")")
+      first_play = factor(t_last_play, levels = c('Pass','Run')),
+      second_play = factor(playType, levels = c('Pass','Run')),
+      diff = if (color == 'EPA/Play') epa_play - second_LA_epa_play else SR - second_LA_SR,
+      tile_label = paste0(playType,' after ',t_last_play, "\n",
+                          round(frequency * 100), "% of plays",
+                          "\nEPA: ", round(epa_play, 2), " (", second_epa_rk, "/", n_teams, ") | SR: ", round(SR * 100), "% (", second_SR_rk, "/", n_teams, ")")
     )
   
-  # Create the plot with facets
-  p <- ggplot(tree_data) +
-    # Background 
-    annotate("rect", xmin = -1.75, xmax = 4.75, ymin = 0, ymax = 2.6,fill = third, alpha = .5) +
-    # Caption
-    # annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.55, y = .45, size = 6.5, parse = TRUE) +
-    # Team Wordmark
-    # geom_nfl_wordmarks( data = logo_data, aes(x = x, y = y, team_abbr = team), width = 0.75, alpha = 0.7) +
-    # Frequency Connectors
-    geom_segment( aes(x = x_root, y = y_root, xend = x_end, yend = y_end, linewidth = 5, color = frequency)) +
-    # Frequency Label
-    geom_label(
-      aes(x = (x_root + x_end) / 2, y = (y_root + y_end) / 2, label = edge_label),
-      size = 6.5, fontface = "bold", color = "black", fill = 'white') +
-    # Root nodes (Pass/Run starting points)
-    geom_label(
-      data = tree_data %>% distinct(posteam, first_play, x_root, y_root, 
-                                    first_epa_play, first_SR, first_epa_diff, root_label),
-      aes(x = x_root, y = y_root, fill = first_epa_diff, label = root_label),
-      size = 6.5, label.padding = unit(0.3, "lines"), 
-      label.r = unit(0.2, "lines"), fontface = "bold"
-    ) +
-    # Outcome nodes (second play results)
-    geom_label(
-      aes(x = x_end, y = y_end, fill = epa_diff, label = end_label),
-      size = 6.5,label.padding = unit(0.3, "lines"),
-      label.r = unit(0.2, "lines"), fontface = "bold"
-    ) +
-    # Color scales
-    scale_color_gradient2(
-      low = low_color, high = high_color, mid = mid_color, 
-      midpoint = 0.5, name = "Frequency"
-    ) +
-    scale_fill_gradient2(
-      low = low_color, high = high_color, mid = mid_color,,
-      midpoint = 16,
-      name = "EPA vs League Avg"
-    ) +
-    
-    # Labels and theming
+  p <- ggplot(tile_data, aes(x = first_play, y = second_play, fill = diff)) +
+    annotate("rect", xmin = 0.4, xmax = 2.6, ymin = 0.4, ymax = 2.6, fill = third, alpha = .5) +
+    geom_tile(color = 'white', linewidth = 2) +
+    geom_text(aes(label = tile_label), color = 'black', fontface = 'bold', size = 6.5, lineheight = 1.1) +
+    scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = 0,
+                         name = paste0(color, " vs league avg")) +
+    scale_x_discrete(position = 'top', name = "2nd play") +
+    scale_y_discrete(name = "1st play") +
     labs(
-      title = paste0(team_name, ' Offensive Play Calling Tendancies'),
+      title = paste0(team_name, if (side == 'Off') ' Offensive' else ' Defensive', ' Sequence Efficiency'),
       subtitle = subtitle,
-      caption = paste0("**Analysis:** @AriEizen | **Data:** nflfastR | 
-                         **",color, " League Rank:**
-                         <span style='color: #4B0092;'>Purple</span> (Below Average) →
-                         <span style='color: #1AFF1A;'>Green</span> (Above Average)")
-      # caption = "@arieizen | data: nflfastR"
+      caption = paste0("**Analysis:** @AriEizen | **Data:** nflfastR | **Fill:** ", color, " vs league average, purple (below) to green (above). Ranks are league rank for that exact sequence (1 = best).")
     ) +
-    # theme_void() +
     theme(
-      plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary #, family = 'Roboto'
-      ),
-      plot.subtitle = element_text(size = 20, hjust = 0.5),
-      # plot.caption = element_text(size = 14,face = "bold"),
-      axis.title = element_blank(),
+      plot.title = element_text(size = 22, face = "bold", hjust = 0.5, color = primary),
+      plot.subtitle = element_text(size = 16, hjust = 0.5),
+      plot.caption = element_markdown(size = 14, hjust = 0),
+      axis.title = element_text(size = 14, face = 'bold'),
+      axis.text = element_text(size = 13, face = 'bold'),
       axis.ticks = element_blank(),
-      axis.text = element_blank(),
-      plot.caption = element_markdown(size = 18, hjust = 0),
       legend.position = "none",
       plot.background = element_rect(fill = "white", color = NA),
       panel.background = element_rect(fill = "white", color = NA),
-      panel.spacing = unit(0.1, "lines"),
-      panel.border = element_rect(colour = secondary, fill=NA, linewidth=2.5)
-    ) +
-    coord_cartesian(xlim = c(-0.75, 3.75),ylim = c(0.5, 2.5),clip = "off")
+      panel.grid = element_blank(),
+      panel.border = element_rect(colour = secondary, fill = NA, linewidth = 2.5)
+    )
   
   return(p)
 }
 
-create_def_decision_trees <- function(data, subtitle, def_team = 'DET', color = 'EPA/Play') {
-  
-  freq_data <- data %>% 
-    filter(defteam == def_team)
-  
-  logo_data <- data.frame(
-    x = 1.5,
-    y = 1.5,
-    team = def_team
-  )
-  
-  team_name <- freq_data %>% pull(team_name) %>% unique()
-  primary <- freq_data %>% pull(team_color) %>% unique()
-  secondary <- freq_data %>% pull(team_color2) %>% unique()
-  third <- freq_data %>% pull(team_color3) %>% unique()
-  
-  # Option 1:
-  # low_color = "#8E44AD"
-  # high_color = "#27AE60"
-  # Option 2:
-  # low_color = '#3B4CC0'
-  # high_color = '#B40426'
-  mid_color = "#DDDDDD"
-  # Option 3:
-  high_color = '#4B0092'
-  low_color = '#1AFF1A'
-  
-  
-  tree_data <- freq_data %>%
-    mutate(
-      first_play = t_last_play,
-      second_play = playType,
-      x_root = ifelse(first_play == "Pass", 0.5, 2.5),
-      x_end = case_when(
-        first_play == "Pass" & second_play == "Pass" ~ 0,
-        first_play == "Pass" & second_play == "Run" ~ 1,
-        first_play == "Run" & second_play == "Pass" ~ 2,
-        first_play == "Run" & second_play == "Run" ~ 3,
-      ),
-      y_root = 2,
-      y_end = 1,
-      # Compact labels for space efficiency
-      edge_label = paste0(round(frequency * 100), "%"),
-    )
-  if (color == 'EPA/Play'){
-    tree_data <- tree_data %>% 
-      mutate(
-        first_epa_diff = first_epa_rk,
-        epa_diff = second_epa_rk
-      )
-  } else {
-    tree_data <- tree_data %>% 
-      mutate(
-        first_epa_diff = first_SR_rk,
-        epa_diff = second_SR_rk
-      )
-  }
-  
-  tree_data <- tree_data %>% 
-    mutate(
-      first_play = paste0('Any ',t_last_play),
-      second_play = paste0(playType, ' after ', t_last_play),
-      # Create compact node labels
-      root_label = paste0(first_play, "\nEPA: ", round(first_epa_play, 2)," (",first_epa_rk,")", 
-                          "\nSR: ", round(first_SR * 100), "%", " (",first_SR_rk,")"),
-      end_label = paste0(second_play, "\nEPA: ", round(epa_play, 2), " (",second_epa_rk,")",
-                         "\nSR: ", round(SR * 100), "%", " (",second_SR_rk,")")
-    )
-  
-  
-  # Create the plot with facets
-  p <- ggplot(tree_data) +
-    # Background 
-    annotate("rect", xmin = -1.75, xmax = 4.75, ymin = 0, ymax = 2.6,fill = third, alpha = .5) +
-    # Caption
-    # annotate('text', label = 'bold("@arieizen | data: nflfastR")', x = 3.55, y = .45, size = 6.5, parse = TRUE) +
-    # # Team Wordmark
-    # geom_nfl_wordmarks( data = logo_data, aes(x = x, y = y, team_abbr = team), width = 0.75, alpha = 0.7) +
-    # Frequency Connectors
-    geom_segment( aes(x = x_root, y = y_root, xend = x_end, yend = y_end, linewidth = 5, color = frequency)) +
-    # Frequency Label
-    geom_label(
-      aes(x = (x_root + x_end) / 2, y = (y_root + y_end) / 2, label = edge_label),
-      size = 6.5, fontface = "bold", color = "black", fill = 'white') +
-    # Root nodes (Pass/Run starting points)
-    geom_label(
-      data = tree_data %>% distinct(defteam, first_play, x_root, y_root, 
-                                    first_epa_play, first_SR, first_epa_diff, root_label),
-      aes(x = x_root, y = y_root, fill = first_epa_diff, label = root_label),
-      size = 6.5, label.padding = unit(0.3, "lines"), 
-      label.r = unit(0.2, "lines"), fontface = "bold"
-    ) +
-    # Outcome nodes (second play results)
-    geom_label(
-      aes(x = x_end, y = y_end, fill = epa_diff, label = end_label),
-      size = 6.5,label.padding = unit(0.3, "lines"),
-      label.r = unit(0.2, "lines"), fontface = "bold"
-    ) +
-    # Color scales
-    scale_color_gradient2(
-      low = low_color, high = high_color, mid = mid_color, 
-      midpoint = 0.5, name = "Frequency"
-    ) +
-    scale_fill_gradient2(
-      low = low_color, high = high_color, mid = mid_color,
-      midpoint = 16,
-      name = "EPA vs League Avg"
-    ) +
-    # Labels and theming
-    labs(
-      title = paste0(team_name, ' Defensive Play Calling Tendancies'),
-      subtitle = subtitle,
-      caption = paste0("**Analysis:** @AriEizen | **Data:** nflfastR | 
-                         **",color, " League Rank:**
-                         <span style='color: #4B0092;'>Purple</span> (Below Average) →
-                         <span style='color: #1AFF1A;'>Green</span> (Above Average)")
-      # caption = "@arieizen | data: nflfastR"
-    ) +
-    # theme_void() +
-    theme(
-      plot.title = element_text(size = 24,face = "bold",hjust = 0.5,color = primary),
-      plot.subtitle = element_text(size = 20, hjust = 0.5),
-      plot.caption = element_markdown(size = 18, hjust = 0),
-      axis.title = element_blank(),
-      axis.ticks = element_blank(),
-      axis.text = element_blank(),
-      legend.position = "none",
-      plot.background = element_rect(fill = "white", color = NA),
-      panel.background = element_rect(fill = "white", color = NA),
-      panel.spacing = unit(0.1, "lines"),
-      panel.border = element_rect(colour = secondary, fill=NA, linewidth=2.5)
-    ) +
-    coord_cartesian(xlim = c(-0.75, 3.75),ylim = c(0.5, 2.5),clip = "off")
-  
-  return(p)
-}
 
 load_app_data <- function(){
   list(all_seq = read_csv('All Seq.csv', show_col_types = F),
@@ -715,6 +497,21 @@ apply_theme <- function(){
     panel.grid = element_blank()
   )
 }
+
+# Guards against pickerInput's "Deselect All" leaving a filter with zero
+# selections, which would otherwise filter every row out. Falls back to
+# `full` (the complete set of choices) whenever nothing is selected.
+or_all <- function(x, full) {
+  if (is.null(x) || length(x) == 0) full else x
+}
+
+# The full set of personnel groupings, used as both the picker choices
+# and the default/fallback selection now that 'All' is no longer a
+# distinct choice (a fully-selected picker means the same thing).
+# Covers every standard RB-TE personnel grouping (WR count is implied as
+# 5 - RB - TE); 'Other' catches truly exotic/rare packages (e.g. 3-RB
+# goal-line sets) or any unlabeled rows.
+personnel_choices <- c('00p','01p','10p','11p','12p','13p','20p','21p','22p','23p','Other')
 # Define UI for application that draws a histogram
 icon <- div(
   style = "position: absolute; top: 10px; right: 20px; 
@@ -734,6 +531,11 @@ ui <- navbarPage(
     secondary = "#457B9D",    # Blue highlights
     base_font = "Oswald"      # Sports-like font
   ),
+  # Shown above every tab: how current the data is overall, and how far
+  # personnel charting has caught up (it tends to lag the rest of the pbp
+  # data during the season).
+  header = uiOutput('data_status'),
+  useShinyjs(),
   ############################ HTML and CSS ############################
   tags$head(
     tags$style(HTML("
@@ -785,9 +587,9 @@ ui <- navbarPage(
       margin-bottom: 5px;
     }
   "))
-  #############################################################################
-  # TAB #1: Main Dashboard
-  #############################################################################
+    #############################################################################
+    # TAB #1: Main Dashboard
+    #############################################################################
   ),
   tabPanel("Main Dashboard",
            fluidRow(
@@ -801,27 +603,56 @@ ui <- navbarPage(
                                            min = 1, max = 22, value = c(1,18))
                         ),
                         column(2,
-                               sliderInput("wp", "Win %:", 
-                                           min = 0, max = 100, value = c(5,95))
+                               numericRangeInput("wp", "Win %:", 
+                                                 min = 0, max = 100, value = c(5,95))
                         ),
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
-                                   # strong("Down:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('down',"Down:", NULL, 
-                                                      choices = 1:4, 
-                                                      selected = 1:4, inline = TRUE)
+                               # strong("Down:", style = "font-size: 14px;"),
+                               pickerInput('down',
+                                           '',# "Down:", 
+                                           choices = 1:4, 
+                                           selected = 1:4, 
+                                           multiple = T,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Down:")
+                                           # options = pickerOptions(
+                                           #   actionsBox = TRUE,      # Adds 'Select All' and 'Deselect All' buttons
+                                           #   size = 4,
+                                           #   
+                                           # )
+                               )
                                # )
                         ),
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
-                                   # strong("Quarter:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('qtr',"Quarter:", NULL, 
-                                                      choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                      selected = 1:5, inline = TRUE)
-                               # )
+                               # strong("Quarter:", style = "font-size: 14px;"),
+                               pickerInput('qtr',
+                                           '' ,#"Quarter:", 
+                                           choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                           selected = 1:5,
+                                           multiple = T,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Quarter:")
+                                           # options = pickerOptions(
+                                           #   actionsBox = TRUE,      # Adds 'Select All' and 'Deselect All' buttons
+                                           #   size = 5,
+                                           #   
+                                           # ))
+                               )
                         ),
-                        column(2,
-                               selectInput('order', 'Sort By:',
+                        column(1,
+                               pickerInput('season',
+                                           '',# "Season:",
+                                           choices = c(2023,2024,2025),
+                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Season:")
+                               )
+                        ),
+                        column(1,
+                               pickerInput('order','',# 'Sort By:',
                                            choices = c('Overall SR' = 'SR', 
                                                        'Overall EPA' = 'EPA',
                                                        'Pass-Pass SR' = 'PP_SR', 
@@ -832,25 +663,76 @@ ui <- navbarPage(
                                                        'Run-Pass EPA' = 'RP_EPA',
                                                        'Run-Run SR' = 'RR_SR', 
                                                        'Run-Run EPA' = 'RR_EPA'),
-                                           selected = 'SR')
+                                           selected = 'SR',
+                                           options = list(`selected-text-format`= "static",
+                                                          title = "Sort By:"))
                         ),
-                        column(2,
+                        column(3,
+                               fluidRow(
+                                 column(6,
+                                        pickerInput('fp','', #First Play Personnel',
+                                                    choices = personnel_choices,
+                                                    multiple = TRUE,
+                                                    selected = personnel_choices,
+                                                    options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                                   title = "1st Play Personnel:")
+                                        )
+                                 ),
+                                 column(6,
+                                        pickerInput('sp','', #Second Play Personnel',
+                                                    choices = personnel_choices,
+                                                    multiple = TRUE,
+                                                    selected = personnel_choices,
+                                                    options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                                   title = "2nd Play Personnel:")
+                                        )
+                                 )
+                               )
+                        ),
+                        # column(1,
+                        #         # actionButton('toggle_adv1',
+                        #         #              'More Filters',
+                        #         #              class = "btn-primary",
+                        #         #              # icon = icon('filter'),
+                        #         #              style = "width: 100%; height: 38px; margin-top: 25px; font-size: 15px; font-weight: bold;"
+                        #         #              )
+                        #        actionButton('toggle_adv1', 'More Filters',
+                        #                     class = "btn-outline-secondary",
+                        #                     icon = icon('chevron-down'),
+                        #                     style = "width: 100%; height: 38px; margin-top: 25px; font-size: 14px; font-weight: bold;")
+                        #        ),
+                        
+                        column(1,
                                actionButton("apply_filters", 
                                             "Apply",
                                             class = "btn-primary",
                                             icon = icon("filter"),
                                             style = "width: 100%; height: 38px; margin-top: 25px; font-size: 15px; font-weight: bold;")
                         )
-                      )
+                      ),
+                      # shinyjs::hidden(
+                      #   div(id = "adv_filters_1",
+                      #       fluidRow(
+                      #         column(2,
+                      #                selectInput('fp','First Play Personnel',
+                      #                            choices = personnel_choices)
+                      #                ),
+                      #         column(2,
+                      #                selectInput('sp','Second Play Personnel',
+                      #                            choices = personnel_choices)
+                      #         )
+                      #       )
+                      #     )
+                      #   )
                     )
              )
            ),
-        # Show a plot of the generated distribution
-        fluidRow(
-           # DTOutput("raw_data")
-          column(12,gt_output('overview'))
-        )
-    ),
+           # Show a plot of the generated distribution
+           fluidRow(
+             # DTOutput("raw_data")
+             column(12,gt_output('overview'))
+           )
+  ),
   #############################################################################
   # TAB #2: Offensive Play Sequencing Analysis
   #############################################################################
@@ -866,29 +748,92 @@ ui <- navbarPage(
                                            choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
                                            selected = 'ARI')
                         ),
-                        column(2,
-                               sliderInput("week_2", "Week:", 
-                                           min = 1, max = 22, value = c(1,18))
+                        column(3,
+                               fluidRow(
+                                 column(6,
+                                        sliderInput("week_2", "Week:", 
+                                                    min = 1, max = 22, value = c(1,18))
+                                 ),
+                                 column(6,
+                                        numericRangeInput("wp_2", "Win %:", 
+                                                          min = 0, max = 100, value = c(5,95))
+                                 )
+                               )       
                         ),
-                        column(2,
-                               sliderInput("wp_2", "Win %:", 
-                                           min = 0, max = 100, value = c(5,95))
-                        ),
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Down:", style = "font-size: 14px;"),
-                               checkboxGroupInput('down_2',"Down:", NULL, 
-                                                  choices = 1:4, 
-                                                  selected = 1:4, inline = TRUE)
+                               pickerInput('down_2',
+                                           '',# "Down:", 
+                                           choices = 1:4, 
+                                           selected = 1:4, 
+                                           multiple = T,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Down:")
+                                           # options = pickerOptions(
+                                           #   actionsBox = TRUE,      # Adds 'Select All' and 'Deselect All' buttons
+                                           #   size = 4,
+                                           #   
+                                           # )
+                               )
                                # )
                         ),
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Quarter:", style = "font-size: 14px;"),
-                               checkboxGroupInput('qtr_2',"Quarter:", NULL, 
-                                                  choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                  selected = 1:5, inline = TRUE)
-                               # )
+                               pickerInput('qtr_2',
+                                           '' ,#"Quarter:", 
+                                           choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                           selected = 1:5,
+                                           multiple = T,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Quarter:")
+                                           # options = pickerOptions(
+                                           #   actionsBox = TRUE,      # Adds 'Select All' and 'Deselect All' buttons
+                                           #   size = 5,
+                                           #   
+                                           # ))
+                               )
+                        ),
+                        # column(1,
+                        #        actionButton('toggle_adv2',
+                        #                     'More Filters',
+                        #                     class = "btn-primary",
+                        #                     # icon = icon('filter'),
+                        #                     style = "width: 100%; height: 38px; margin-top: 25px; font-size: 12px; font-weight: bold;"
+                        #        )
+                        # ),
+                        column(3,
+                               fluidRow(
+                                 column(6,
+                                        pickerInput('fp2','', #First Play Personnel',
+                                                    choices = personnel_choices,
+                                                    multiple = TRUE,
+                                                    selected = personnel_choices,
+                                                    options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                                   title = "1st Play Personnel:")
+                                        )
+                                 ),
+                                 column(6,
+                                        pickerInput('sp2','', #Second Play Personnel',
+                                                    choices = personnel_choices,
+                                                    multiple = TRUE,
+                                                    selected = personnel_choices,
+                                                    options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                                   title = "2nd Play Personnel:")
+                                        )
+                                 )
+                               )
+                        ),
+                        column(1,
+                               pickerInput('season_2',
+                                           '',# "Season:",
+                                           choices = c(2023,2024,2025),
+                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Season:")
+                               )
                         ),
                         column(1,
                                radioButtons('epa','Rank:', 
@@ -896,21 +841,35 @@ ui <- navbarPage(
                                             selected = 'EPA/Play')
                                
                         ),
-                        column(2,
+                        column(1,
                                actionButton("apply_filters_2", 
                                             "Apply",
                                             class = "btn-primary",
                                             icon = icon("filter"),
                                             style = "width: 100%; height: 38px; margin-top: 25px; font-size: 15px; font-weight: bold;")
                         )
-                      )
+                      ),
+                      # shinyjs::hidden(
+                      #   div(id = "adv_filters_2",
+                      #       fluidRow(
+                      #         column(2,
+                      #                selectInput('fp2','First Play Personnel',
+                      #                            choices = personnel_choices)
+                      #         ),
+                      #         column(2,
+                      #                selectInput('sp2','Second Play Personnel',
+                      #                            choices = personnel_choices)
+                      #         )
+                      #       )
+                      #   )
+                      # )
                     )
              )
            ),
            fluidRow(
              column(12, plotOutput('tree', height = "85vh"
-                                   )
-                    )
+             )
+             )
            )
   ),
   #############################################################################
@@ -928,29 +887,83 @@ ui <- navbarPage(
                                            choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
                                            selected = 'ARI')
                         ),
-                        column(2,
-                               sliderInput("week_3", "Week:", 
-                                           min = 1, max = 22, value = c(1,18))
+                        column(3,
+                               fluidRow(
+                                 column(6,
+                                        sliderInput("week_3", "Week:", 
+                                                    min = 1, max = 22, value = c(1,18))
+                                 ),
+                                 column(6,
+                                        numericRangeInput("wp_3", "Win %:", 
+                                                          min = 0, max = 100, value = c(5,95))
+                                 )
+                               )
                         ),
-                        column(2,
-                               sliderInput("wp_3", "Win %:", 
-                                           min = 0, max = 100, value = c(5,95))
-                        ),
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Down:", style = "font-size: 14px;"),
-                               checkboxGroupInput('down_3',"Down:", NULL, 
-                                                  choices = 1:4, 
-                                                  selected = 1:4, inline = TRUE)
+                               pickerInput('down_3',
+                                           '',#"Down:",
+                                           # NULL, 
+                                           choices = 1:4, 
+                                           selected = 1:4,
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Down:"))
                                # )
                         ),
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Quarter:", style = "font-size: 14px;"),
-                               checkboxGroupInput('qtr_3',"Quarter:", NULL, 
-                                                  choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                  selected = 1:5, inline = TRUE)
+                               pickerInput('qtr_3',
+                                           '', # "Quarter:",
+                                           # NULL, 
+                                           choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                           selected = 1:5,
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Quarter:"))
                                # )
+                        ),
+                        # column(1,
+                        #        actionButton('toggle_adv3',
+                        #                     'More Filters',
+                        #                     class = "btn-primary",
+                        #                     # icon = icon('filter'),
+                        #                     style = "width: 100%; height: 38px; margin-top: 25px; font-size: 12px; font-weight: bold;"
+                        #        )
+                        # ),
+                        column(3,
+                               fluidRow(
+                                 column(6,
+                                        pickerInput('fp3','', #First Play Personnel',
+                                                    choices = personnel_choices,
+                                                    multiple = TRUE,
+                                                    selected = personnel_choices,
+                                                    options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                                   title = "1st Play Personnel:")
+                                        )
+                                 ),
+                                 column(6,
+                                        pickerInput('sp3','', #Second Play Personnel',
+                                                    choices = personnel_choices,
+                                                    multiple = TRUE,
+                                                    selected = personnel_choices,
+                                                    options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                                   title = "2nd Play Personnel:")
+                                        )
+                                 )
+                               )
+                        ),
+                        column(1,
+                               pickerInput('season_3',
+                                           '',# "Season:",
+                                           choices = c(2023,2024,2025),
+                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Season:")
+                               )
                         ),
                         column(1,
                                radioButtons('epa_2','Rank:', 
@@ -958,14 +971,28 @@ ui <- navbarPage(
                                             selected = 'EPA/Play')
                                
                         ),
-                        column(2,
+                        column(1,
                                actionButton("apply_filters_3", 
                                             "Apply",
                                             class = "btn-primary",
                                             icon = icon("filter"),
                                             style = "width: 100%; height: 38px; margin-top: 25px; font-size: 15px; font-weight: bold;")
                         )
-                      )
+                      ),
+                      # shinyjs::hidden(
+                      #   div(id = "adv_filters_3",
+                      #       fluidRow(
+                      #         column(2,
+                      #                selectInput('fp3','First Play Personnel',
+                      #                            choices = personnel_choices)
+                      #         ),
+                      #         column(2,
+                      #                selectInput('sp3','Second Play Personnel',
+                      #                            choices = personnel_choices)
+                      #         )
+                      #       )
+                      #   )
+                      # )
                     )
              )
            ),
@@ -988,43 +1015,81 @@ ui <- navbarPage(
                                            choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
                                            selected = 'ARI')
                         ),
-                        column(2,
-                               sliderInput("week_4", "Week:", 
-                                           min = 1, max = 22, value = c(1,18))
-                        ),
-                        column(2,
-                               sliderInput("wp_4", "Win %:", 
-                                           min = 0, max = 100, value = c(5,95))
+                        column(3,
+                               fluidRow(
+                                 column(6,
+                                        sliderInput("week_4", "Week:", 
+                                                    min = 1, max = 22, value = c(1,18))
+                                 ),
+                                 column(6,
+                                        numericRangeInput("wp_4", "Win %:", 
+                                                          min = 0, max = 100, value = c(5,95))
+                                 )
+                               )       
                         ),
                         column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Down:", style = "font-size: 14px;"),
-                               checkboxGroupInput('down_4',"Down:", NULL, 
-                                                  choices = 1:4, 
-                                                  selected = 1:4, inline = TRUE)
+                               pickerInput('down_4',
+                                           '',# "Down:",
+                                           # NULL, 
+                                           choices = 1:4,
+                                           selected = 1:4,
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Down:"))
                                # )
                         ),
                         column(1,
-                          radioButtons('tile','Tile Color:',
-                                       choices = c('EPA/Play','Success Rate','Frequency'),
-                                       selected = 'EPA/Play')
-                        ),
-                        column(2,
                                # div(style = "margin-top: 5px;",
                                #     strong("Distance To Go:", style = "font-size: 14px;"),
-                                   checkboxGroupInput('dist',"Distance To Go:", 
-                                                      choices = c('10+','10-7','6-4','3-1','GTG'), 
-                                                      selected = c('10+','10-7','6-4','3-1','GTG'), inline = TRUE)
+                               pickerInput('dist',
+                                           '',# "Distance:", 
+                                           choices = c('10+','10-7','6-4','3-1','GTG'), 
+                                           selected = c('10+','10-7','6-4','3-1','GTG'),
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Distance:")
+                               )
                                # )
                         ),
                         
-                        column(2,
+                        column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Quarter:", style = "font-size: 14px;"),
-                               checkboxGroupInput('qtr_4',"Quarter:", NULL, 
-                                                  choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                  selected = 1:5, inline = TRUE)
+                               pickerInput('qtr_4',
+                                           '',# "Quarter:",
+                                           # NULL, 
+                                           choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                           selected = 1:5,
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Quarter:"))
                                # )
+                        ),
+                        column(1,
+                               pickerInput('personnel',
+                                           '', #Personnel',
+                                           choices = personnel_choices,
+                                           multiple = TRUE,
+                                           selected = personnel_choices,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Personnel:"))
+                        ),
+                        column(1,
+                               pickerInput('season_4',
+                                           '',# "Season:",
+                                           choices = c(2023,2024,2025),
+                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Season:")
+                               )
+                        ),
+                        column(1,
+                               radioButtons('tile','Tile Color:',
+                                            choices = c('EPA/Play','Success Rate','Frequency'),
+                                            selected = 'EPA/Play')
                         ),
                         column(1,
                                actionButton("apply_filters_4", 
@@ -1037,6 +1102,9 @@ ui <- navbarPage(
                     )
              )
            ),
+           fluidRow(
+             column(12, uiOutput('kpi_4'))
+           ),
            fluidRow(column(6,
                            # div(style = "display: flex; flex-direction: column; height: 100%;",
                            plotOutput('pass_chart'#, height = "50%"
@@ -1048,7 +1116,7 @@ ui <- navbarPage(
                   ))),
            fluidRow(
              column(12,gt_output('pbp_table')))
-           ),
+  ),
   #############################################################################
   # TAB #5: Defensive Down and Distance Tendencies
   #############################################################################
@@ -1064,43 +1132,81 @@ ui <- navbarPage(
                                            choices = unique(teams_colors_logos$team_abbr)[c(-19,-27,-30,-33)],
                                            selected = 'ARI')
                         ),
-                        column(2,
-                               sliderInput("week_5", "Week:", 
-                                           min = 1, max = 22, value = c(1,18))
-                        ),
-                        column(2,
-                               sliderInput("wp_5", "Win %:", 
-                                           min = 0, max = 100, value = c(5,95))
+                        column(3,
+                               fluidRow(
+                                 column(6,
+                                        sliderInput("week_5", "Week:", 
+                                                    min = 1, max = 22, value = c(1,18))
+                                 ),
+                                 column(6,
+                                        numericRangeInput("wp_5", "Win %:", 
+                                                          min = 0, max = 100, value = c(5,95))
+                                 )
+                               )       
                         ),
                         column(1,
                                # div(style = "margin-top: 5px;",
                                # strong("Down:", style = "font-size: 14px;"),
-                               checkboxGroupInput('down_5',"Down:", NULL, 
-                                                  choices = 1:4, 
-                                                  selected = 1:4, inline = TRUE)
+                               pickerInput('down_5',
+                                           '',# "Down:",
+                                           # NULL, 
+                                           choices = 1:4,
+                                           selected = 1:4,
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Down:")
+                               )
                                # )
+                        ),
+                        column(1,
+                               # div(style = "margin-top: 5px;",
+                               #     strong("Distance To Go:", style = "font-size: 14px;"),
+                               pickerInput('dist_2',
+                                           '',# "Distance:", 
+                                           choices = c('10+','10-7','6-4','3-1','GTG'), 
+                                           selected = c('10+','10-7','6-4','3-1','GTG'),
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Distance:")
+                               )
+                               # )
+                        ),
+                        
+                        column(1,
+                               # div(style = "margin-top: 5px;",
+                               # strong("Quarter:", style = "font-size: 14px;"),
+                               pickerInput('qtr_5',
+                                           '',# "Quarter:", NULL, 
+                                           choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
+                                           selected = 1:5,
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Quarter:"))
+                               # )
+                        ),
+                        column(1,
+                               pickerInput('personnel_2',
+                                           '', #Personnel',
+                                           choices = personnel_choices,
+                                           multiple = TRUE,
+                                           selected = personnel_choices,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Personnel:"))
+                        ),
+                        column(1,
+                               pickerInput('season_5',
+                                           '',# "Season:",
+                                           choices = c(2023,2024,2025),
+                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           multiple = TRUE,
+                                           options = list(`actions-box` = TRUE, `selected-text-format`= "static",
+                                                          title = "Season:")
+                               )
                         ),
                         column(1,
                                radioButtons('tile_2','Tile Color:',
                                             choices = c('EPA/Play','Success Rate','Frequency'),
                                             selected = 'EPA/Play')
-                        ),
-                        column(2,
-                               # div(style = "margin-top: 5px;",
-                               #     strong("Distance To Go:", style = "font-size: 14px;"),
-                               checkboxGroupInput('dist_2',"Distance To Go:", 
-                                                  choices = c('10+','10-7','6-4','3-1','GTG'), 
-                                                  selected = c('10+','10-7','6-4','3-1','GTG'), inline = TRUE)
-                               # )
-                        ),
-                        
-                        column(2,
-                               # div(style = "margin-top: 5px;",
-                               # strong("Quarter:", style = "font-size: 14px;"),
-                               checkboxGroupInput('qtr_5',"Quarter:", NULL, 
-                                                  choices = c("Q1" = 1, "Q2" = 2, "Q3" = 3, "Q4" = 4, "OT" = 5), 
-                                                  selected = 1:5, inline = TRUE)
-                               # )
                         ),
                         column(1,
                                actionButton("apply_filters_5", 
@@ -1112,6 +1218,9 @@ ui <- navbarPage(
                       )
                     )
              )
+           ),
+           fluidRow(
+             column(12, uiOutput('kpi_5'))
            ),
            fluidRow(column(6,
                            # div(style = "display: flex; flex-direction: column; height: 100%;",
@@ -1125,12 +1234,53 @@ ui <- navbarPage(
            fluidRow(
              column(12,gt_output('pbp_table_def')))
   )
-  )
-  #############################################################################
+)
+#############################################################################
 
 server <- function(input, output) {
   
   app_data <- load_app_data()
+  
+  # Data freshness banner: compares the most recent week/season present in
+  # the overall play-by-play data against the most recent week/season for
+  # which personnel groupings (offense_p) are actually populated. Personnel
+  # charting can lag a week or more behind the rest of the pbp data during
+  # the season, so this makes that gap visible rather than silent.
+  output$data_status <- renderUI({
+    full <- app_data$full_data
+    
+    latest_all <- full %>% 
+      filter(!is.na(week), !is.na(season)) %>% 
+      arrange(desc(season), desc(week)) %>% 
+      slice(1)
+    all_str <- if (nrow(latest_all) > 0) {
+      paste0("Week ", latest_all$week[1], ", ", latest_all$season[1])
+    } else "Unknown"
+    
+    has_personnel <- full %>% filter(!is.na(offense_p) & offense_p != '')
+    latest_personnel <- has_personnel %>% 
+      filter(!is.na(week), !is.na(season)) %>% 
+      arrange(desc(season), desc(week)) %>% 
+      slice(1)
+    personnel_str <- if (nrow(latest_personnel) > 0) {
+      paste0("Week ", latest_personnel$week[1], ", ", latest_personnel$season[1])
+    } else "Unknown"
+    
+    lag_note <- if (nrow(latest_all) > 0 && nrow(latest_personnel) > 0 &&
+                    !(latest_all$season[1] == latest_personnel$season[1] &&
+                      latest_all$week[1] == latest_personnel$week[1])) {
+      " ⚠ Personnel data is behind the rest of the data"
+    } else ""
+    
+    div(
+      style = "background-color: #2C2C2C; color: #FFFFFF; padding: 6px 20px;
+               font-size: 12px; font-weight: bold; text-align: right;
+               border-bottom: 2px solid #E63946;",
+      paste0("Data through: ", all_str,
+             "  |  Personnel data through: ", personnel_str, lag_note,
+             "  |  By: @AriEizen | Data: nflfastR/Wikipedia | Inspo: @reinhardNFL")
+    )
+  })
   
   # Action for Tab 1
   applied_overview <- reactiveValues(
@@ -1140,34 +1290,55 @@ server <- function(input, output) {
                      app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE))),
     wp = c(5,95),
     down = 1:4,
-    qtr = 1:5
+    qtr = 1:5,
+    season = most_recent_season(),
+    fp = personnel_choices,
+    sp = personnel_choices,
+    # bp = 'All'
   )
-
+  
   observeEvent(input$apply_filters, {
     applied_overview$week <- input$week
     applied_overview$wp <- input$wp
-    applied_overview$down <- input$down
-    applied_overview$qtr <- input$qtr
+    applied_overview$down <- or_all(input$down, 1:4)
+    applied_overview$qtr <- or_all(input$qtr, 1:5)
+    applied_overview$season <- or_all(input$season, c(2023,2024,2025))
+    applied_overview$fp <- or_all(input$fp, personnel_choices)
+    applied_overview$sp <- or_all(input$sp, personnel_choices)
   })
-
+  
   output$overview <- render_gt({
     t <- app_data$all_seq %>% 
       filter(between(week,as.numeric(min(applied_overview$week)),as.numeric(max(applied_overview$week))),
              between(wp,min(applied_overview$wp)/100,max(applied_overview$wp)/100),
              down %in% applied_overview$down,
-             qtr %in% applied_overview$qtr)
+             qtr %in% applied_overview$qtr,
+             season %in% applied_overview$season)
+    
+    # Filters for Formation
+    t <- t %>%
+      mutate(
+        first_play_p  = if_else(seq_as_start == seq_group, offense_p, t_last_p),
+        second_play_p = if_else(seq_as_start == seq_group, t_next_p, offense_p)
+      ) %>%
+      filter(
+        first_play_p %in% applied_overview$fp,
+        second_play_p %in% applied_overview$sp
+      )
     
     pbp <- app_data$pbp %>% 
       filter(between(week,as.numeric(min(applied_overview$week)),as.numeric(max(applied_overview$week))),
              between(wp,min(applied_overview$wp)/100,max(applied_overview$wp)/100),
              down %in% applied_overview$down,
-             qtr %in% applied_overview$qtr)
-
+             qtr %in% applied_overview$qtr,
+             season %in% applied_overview$season,
+             (offense_p %in% applied_overview$fp | offense_p %in% applied_overview$sp) )
+    
     lg_avg <- calculate_league_averages(t,pbp)
     # print(head(app_data$all_seq))
     # print(head(app_data$pbp))
     play_table <- seq_table(t, pbp) %>% 
-      select(-logo) %>% 
+      # select(-logo) %>% 
       arrange(desc(.data[[input$order]])) %>%
       unique() %>% 
       mutate(rank = as.character(row_number()))
@@ -1175,13 +1346,15 @@ server <- function(input, output) {
     table_split <- split_data_for_display(play_table) %>% 
       bind_rows(lg_avg) %>% 
       relocate(rank_2, .before = wordmark_2) #%>% 
-      # select(-PP_plays,-PR_plays,-RR_plays,-RP_plays,
-      #        -PP_plays_2,-PR_plays_2,-RR_plays_2,-RP_plays_2)
+    # select(-PP_plays,-PR_plays,-RR_plays,-RP_plays,
+    #        -PP_plays_2,-PR_plays_2,-RR_plays_2,-RP_plays_2)
     
-    tab_subtitle <- paste0("2025 Season • Weeks ", min(pbp$week), "-", max(pbp$week), 
-                          " • Win Probability ", min(applied_overview$wp), "%-", max(applied_overview$wp), "%",
-                          if(length(applied_overview$down) < 4) paste0(" • Downs: ", paste(applied_overview$down, collapse=", ")) else "",
-                          if(length(applied_overview$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview$qtr), collapse=", ")) else "")
+    tab_subtitle <- paste0(paste(sort(applied_overview$season), collapse = ", "), " Season(s) • Weeks ", min(pbp$week), "-", max(pbp$week), 
+                           " • Win Probability ", min(applied_overview$wp), "%-", max(applied_overview$wp), "%",
+                           if(length(applied_overview$down) < 4) paste0(" • Downs: ", paste(applied_overview$down, collapse=", ")) else "",
+                           if(length(applied_overview$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview$qtr), collapse=", ")) else "",
+                           if(length(applied_overview$fp) < length(personnel_choices)) paste0(" • 1st Play Personnel: ", paste(applied_overview$fp, collapse = ', ')) else "",
+                           if(length(applied_overview$sp) < length(personnel_choices)) paste0(" • 2nd Play Personnel: ", paste(applied_overview$sp, collapse = ', ')) else "")
     
     # Option 1:
     # low_color = "#8E44AD"
@@ -1193,7 +1366,7 @@ server <- function(input, output) {
     # Option 3:
     low_color = '#4B0092'
     high_color = '#1AFF1A'
-
+    
     table_split %>% 
       gt() %>% 
       # Move rank columns to start
@@ -1412,15 +1585,21 @@ server <- function(input, output) {
                      app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE))),
     wp = c(5,95),
     down = 1:4,
-    qtr = 1:5
+    qtr = 1:5,
+    season = most_recent_season(),
+    fp = personnel_choices,
+    sp = personnel_choices
   )
   
   observeEvent(input$apply_filters_2, {
     applied_overview_2$tm <- input$tm
     applied_overview_2$week <- input$week_2  
     applied_overview_2$wp <- input$wp_2      
-    applied_overview_2$down <- input$down_2  
-    applied_overview_2$qtr <- input$qtr_2 
+    applied_overview_2$down <- or_all(input$down_2, 1:4)
+    applied_overview_2$qtr <- or_all(input$qtr_2, 1:5)
+    applied_overview_2$season <- or_all(input$season_2, c(2023,2024,2025))
+    applied_overview_2$fp <- or_all(input$fp2, personnel_choices)
+    applied_overview_2$sp <- or_all(input$sp2, personnel_choices)
   })
   
   output$tree <- renderPlot({
@@ -1429,19 +1608,25 @@ server <- function(input, output) {
       filter(between(week, as.numeric(min(applied_overview_2$week)), max(applied_overview_2$week)),
              between(wp, min(applied_overview_2$wp)/100, max(applied_overview_2$wp)/100),
              down %in% applied_overview_2$down,
-             qtr %in% applied_overview_2$qtr)
+             qtr %in% applied_overview_2$qtr,
+             season %in% applied_overview_2$season,
+             t_last_p %in% applied_overview_2$fp,
+             offense_p %in% applied_overview_2$sp)
     
-    subtitle <- paste0("2025 Season • Weeks ", min(tree_data$week), "-", max(tree_data$week), 
+    subtitle <- paste0(paste(sort(applied_overview_2$season), collapse = ", "), " Season(s) • Weeks ", min(tree_data$week), "-", max(tree_data$week), 
                        " • Win Probability ", min(applied_overview_2$wp), "%-", max(applied_overview_2$wp), "%",
                        if(length(applied_overview_2$down) < 4) paste0(" • Downs: ", paste(applied_overview_2$down, collapse=", ")) else "",
-                       if(length(applied_overview_2$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_2$qtr), collapse=", ")) else "")
+                       if(length(applied_overview_2$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_2$qtr), collapse=", ")) else "",
+                       if(length(applied_overview_2$fp) < length(personnel_choices)) paste0(" • 1st Play Personnel: ", paste(applied_overview_2$fp, collapse = ', ')) else "",
+                       if(length(applied_overview_2$sp) < length(personnel_choices)) paste0(" • 2nd Play Personnel: ", paste(applied_overview_2$sp, collapse = ', ')) else "")
     
     off_freq_data <- calculate_sequence_frequencies(tree_data, side = 'Off')
-    tree_plot <- create_off_decision_trees(off_freq_data, subtitle, off_team = applied_overview_2$tm, color = input$epa)
+    
+    tree_plot <- create_sequence_matrix(off_freq_data, subtitle, team = applied_overview_2$tm, side = 'Off', color = input$epa)
     
     tree_plot
   })
-
+  
   # Action for Tab 3
   applied_overview_3 <- reactiveValues(
     tm = 'ARI',
@@ -1451,15 +1636,21 @@ server <- function(input, output) {
                      app_data$all_seq %>% pull(week) %>% max(na.rm = TRUE))),
     wp = c(5,95),
     down = 1:4,
-    qtr = 1:5
+    qtr = 1:5,
+    season = most_recent_season(),
+    fp = personnel_choices,
+    sp = personnel_choices
   )
   
   observeEvent(input$apply_filters_3, {
     applied_overview_3$tm <- input$t
     applied_overview_3$week <- input$week_3
     applied_overview_3$wp <- input$wp_3      
-    applied_overview_3$down <- input$down_3  
-    applied_overview_3$qtr <- input$qtr_3
+    applied_overview_3$down <- or_all(input$down_3, 1:4)
+    applied_overview_3$qtr <- or_all(input$qtr_3, 1:5)
+    applied_overview_3$season <- or_all(input$season_3, c(2023,2024,2025))
+    applied_overview_3$fp <- or_all(input$fp3, personnel_choices)
+    applied_overview_3$sp <- or_all(input$sp3, personnel_choices)
   })
   
   output$def_tend <- renderPlot({
@@ -1468,17 +1659,23 @@ server <- function(input, output) {
       filter(between(week, as.numeric(min(applied_overview_3$week)), max(applied_overview_3$week)),
              between(wp, min(applied_overview_3$wp)/100, max(applied_overview_3$wp)/100),
              down %in% applied_overview_3$down,
-             qtr %in% applied_overview_3$qtr)
+             qtr %in% applied_overview_3$qtr,
+             season %in% applied_overview_3$season,
+             t_last_p %in% applied_overview_3$fp,
+             offense_p %in% applied_overview_3$sp)
     
-    subtitle <- paste0("2025 Season • Weeks ", min(def_data$week), "-", max(def_data$week), 
+    subtitle <- paste0(paste(sort(applied_overview_3$season), collapse = ", "), " Season(s) • Weeks ", min(def_data$week), "-", max(def_data$week), 
                        " • Win Probability ", min(applied_overview_3$wp), "%-", max(applied_overview_3$wp), "%",
                        if(length(applied_overview_3$down) < 4) paste0(" • Downs: ", paste(applied_overview_3$down, collapse=", ")) else "",
-                       if(length(applied_overview_3$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_3$qtr), collapse=", ")) else "")
+                       if(length(applied_overview_3$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_3$qtr), collapse=", ")) else "",
+                       if(length(applied_overview_3$fp) < length(personnel_choices)) paste0(" • 1st Play Personnel: ", paste(applied_overview_3$fp, collapse = ', ')) else "",
+                       if(length(applied_overview_3$sp) < length(personnel_choices)) paste0(" • 2nd Play Personnel: ", paste(applied_overview_3$sp, collapse = ', ')) else "")
     
-  def_freq_data <- calculate_sequence_frequencies(def_data,side = 'Def')
-  def_plot <- create_def_decision_trees(def_freq_data,subtitle, def_team = applied_overview_3$tm, color = input$epa_2)
-  
-  def_plot
+    def_freq_data <- calculate_sequence_frequencies(def_data,side = 'Def')
+    
+    def_plot <- create_sequence_matrix(def_freq_data, subtitle, team = applied_overview_3$tm, side = 'Def', color = input$epa_2)
+    
+    def_plot
   })
   
   ## Code for Tab 4  
@@ -1491,16 +1688,53 @@ server <- function(input, output) {
     wp = c(5,95),
     dist = c('10+','10-7','6-4','3-1','GTG'),
     down = 1:4,
-    qtr = 1:5
+    qtr = 1:5,
+    season = most_recent_season(),
+    personnel = personnel_choices
   )
-
+  
   observeEvent(input$apply_filters_4, {
     applied_overview_4$tm <- input$t
     applied_overview_4$week <- input$week_4
     applied_overview_4$wp <- input$wp_4  
-    applied_overview_4$dist <- input$dist  
-    applied_overview_4$down <- input$down_4  
-    applied_overview_4$qtr <- input$qtr_4
+    applied_overview_4$dist <- or_all(input$dist, c('10+','10-7','6-4','3-1','GTG'))
+    applied_overview_4$down <- or_all(input$down_4, 1:4)
+    applied_overview_4$qtr <- or_all(input$qtr_4, 1:5)
+    applied_overview_4$season <- or_all(input$season_4, c(2023,2024,2025))
+    applied_overview_4$personnel <- or_all(input$personnel, personnel_choices)
+  })
+  
+  output$kpi_4 <- renderUI({
+    base <- app_data$full_data %>% 
+      filter(between(week, as.numeric(min(applied_overview_4$week)), max(applied_overview_4$week)),
+             between(wp, min(applied_overview_4$wp)/100, max(applied_overview_4$wp)/100),
+             down %in% applied_overview_4$down,
+             qtr %in% applied_overview_4$qtr,
+             dist %in% applied_overview_4$dist,
+             season %in% applied_overview_4$season,
+             penalty == 0,
+             playType %in% c("Run","Pass"),
+             (offense_p %in% applied_overview_4$personnel))
+    
+    team_stats <- base %>% 
+      group_by(posteam) %>% 
+      reframe(epa = mean(epa, na.rm = TRUE), sr = mean(success, na.rm = TRUE), plays = n()) %>% 
+      mutate(rank = dense_rank(desc(epa)))
+    
+    this_team <- team_stats %>% filter(posteam == applied_overview_4$tm)
+    n_teams <- team_stats %>% pull(posteam) %>% n_distinct()
+    
+    team_colors <- teams_colors_logos %>% filter(team_abbr == applied_overview_4$tm)
+    c1 <- team_colors %>% pull(team_color)
+    c2 <- team_colors %>% pull(team_color2)
+    
+    layout_column_wrap(
+      width = 1/4,
+      value_box(title = "EPA / play", value = round(this_team$epa, 3), theme = value_box_theme(bg = c1, fg = "white")),
+      value_box(title = "Success rate", value = scales::percent(this_team$sr, accuracy = 0.1), theme = value_box_theme(bg = c2, fg = "white")),
+      value_box(title = "Total plays", value = this_team$plays, theme = value_box_theme(bg = c1, fg = "white")),
+      value_box(title = "League rank", value = paste0(this_team$rank, " of ", n_teams), theme = value_box_theme(bg = c2, fg = "white"))
+    )
   })
   
   output$pbp_table <- render_gt({
@@ -1511,33 +1745,65 @@ server <- function(input, output) {
              down %in% applied_overview_4$down,
              qtr %in% applied_overview_4$qtr,
              dist %in% applied_overview_4$dist,
+             season %in% applied_overview_4$season,
              penalty == 0,
-             playType %in% c("Run","Pass")) %>% 
+             playType %in% c("Run","Pass"),
+             (offense_p %in% applied_overview_4$personnel)) %>% 
       arrange(week, game_id, play_id)
     
     team_name <- teams_colors_logos %>% 
       filter(team_abbr == applied_overview_4$tm) %>% 
       pull(team_name)
     
-    subtitle <- paste0("2025 Season • Weeks ", min(play_table$week), "-", max(play_table$week), 
+    subtitle <- paste0(paste(sort(applied_overview_4$season), collapse = ", "), " Season(s) • Weeks ", min(play_table$week), "-", max(play_table$week), 
                        " • Win Probability ", min(applied_overview_4$wp), "%-", max(applied_overview_4$wp), "%",
                        if(length(applied_overview_4$down) < 4) paste0(" • Downs: ", paste(applied_overview_4$down, collapse=", ")) else " • All Downs ",
                        if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else " • All Qtrs ",
-                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances")
+                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances",
+                       if(length(applied_overview_4$personnel) < length(personnel_choices)) paste0(" • Personnel: ", paste(applied_overview_4$personnel, collapse = ', ')) else "")
     play_table %>% 
       select(week, posteam_wordmark, defteam_wordmark,
-             qtr, down,ydstogo, yrdln, yards_gained,playType, epa,desc) %>%  
+             qtr, down,ydstogo, yrdln, yards_gained,playType, offense_p, epa,desc) %>%  
       gt() %>% 
       cols_label(qtr = 'Quarter',down = 'Down',ydstogo = 'To Go',yrdln = 'Yard Line',
-                 yards_gained = 'Yards Gained',playType = 'Play Type', epa = 'EPA',
+                 yards_gained = 'Yards Gained',playType = 'Play Type', offense_p = 'Personnel', epa = 'EPA',
                  desc = 'Play Description', week = 'Week') %>% 
       cols_label(posteam_wordmark = 'Offense', defteam_wordmark = 'Defense') %>%
       tab_header(title = paste0(team_name, ' Play Table'), subtitle = subtitle) %>% 
       fmt_number(columns = epa) %>% 
-      data_color(columns = epa, domain = c(-3,3), palette = c('#4B0092', '#1AFF1A')) %>%
-      data_color(playType, palette = c('red','blue')) %>% 
+      # Colored pill for Play Type, replacing the flat data_color fill
+      text_transform(
+        locations = cells_body(columns = playType),
+        fn = function(x) {
+          pill_color <- if_else(x == 'Pass', '#457B9D', '#2A9D8F')
+          paste0("<span style='background:", pill_color, "22; color:", pill_color, 
+                 "; padding:2px 10px; border-radius:10px; font-size:12px; font-weight:bold;'>", x, "</span>")
+        }
+      ) %>% 
+      # Inline EPA bar alongside the value: a diverging bar centered at zero,
+      # so a negative EPA visibly extends left of center (not just a shorter
+      # bar in the same direction as a positive one). Capped at +/-3 EPA.
+      text_transform(
+        locations = cells_body(columns = epa),
+        fn = function(x) {
+          x <- gsub("\u2212", "-", x)  # gt formats negatives with a Unicode minus sign, not ASCII "-"
+          val <- as.numeric(x)
+          val <- if_else(is.na(val), 0, val)
+          magnitude <- pmin(abs(val) / 3, 1) * 50
+          bar_color <- if_else(val <= 0, '#4B0092','#1AFF1A')
+          left_pos <- if_else(val >= 0, 50, 50 - magnitude)
+          paste0(
+            "<div style='display:flex; align-items:center; gap:6px;'>",
+            "<div style='position:relative; width:40px; height:6px; background:#EAEAEA; border-radius:3px; overflow:hidden;'>",
+            "<div style='position:absolute; left:50%; top:0; bottom:0; width:1px; background:#999;'></div>",
+            "<div style='position:absolute; left:", left_pos, "%; top:0; height:100%; width:", magnitude, "%; background:", bar_color, ";'></div>",
+            "</div>",
+            "<span>", round(val, 2), "</span></div>"
+          )
+        }
+      ) %>% 
       gt_img_rows(columns = posteam_wordmark) %>%
-      gt_img_rows(columns = defteam_wordmark) 
+      gt_img_rows(columns = defteam_wordmark)
   })
   output$pass_chart <- renderPlot({
     pass_plays <- app_data$full_data %>% 
@@ -1547,17 +1813,66 @@ server <- function(input, output) {
              down %in% applied_overview_4$down,
              qtr %in% applied_overview_4$qtr,
              dist %in% applied_overview_4$dist,
-             pass == 1 & !is.na(pass_location))
+             season %in% applied_overview_4$season,
+             pass == 1 & !is.na(pass_location),
+             (offense_p %in% applied_overview_4$personnel))
     
     team_name <- teams_colors_logos %>% 
       filter(team_abbr == applied_overview_4$tm) %>% 
       pull(team_name)
     
-    subtitle <- paste0("2025 Season • Weeks ", min(pass_plays$week), "-", max(pass_plays$week), 
+    subtitle <- paste0(paste(sort(applied_overview_4$season), collapse = ", "), " Season(s) • Weeks ", min(pass_plays$week), "-", max(pass_plays$week), 
                        " • Win Probability ", min(applied_overview_4$wp), "%-", max(applied_overview_4$wp), "%",
                        if(length(applied_overview_4$down) < 4) paste0(" • Downs: ", paste(applied_overview_4$down, collapse=", ")) else " • All Downs ",
                        if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else " • All Qtrs ",
-                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances")
+                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances",
+                       if(length(applied_overview_4$personnel) < length(personnel_choices)) paste0(" • Personnel: ", paste(applied_overview_4$personnel, collapse = ', ')) else "")
+    
+    league_base <- app_data$full_data %>% 
+      filter(between(week, as.numeric(min(applied_overview_4$week)), max(applied_overview_4$week)),
+             between(wp, min(applied_overview_4$wp)/100, max(applied_overview_4$wp)/100),
+             down %in% applied_overview_4$down,
+             qtr %in% applied_overview_4$qtr,
+             dist %in% applied_overview_4$dist,
+             season %in% applied_overview_4$season,
+             pass == 1 & !is.na(pass_location),
+             (offense_p %in% applied_overview_4$personnel))
+    
+    league_mid <- case_when(
+      input$tile == 'EPA/Play' ~ mean(league_base$epa, na.rm = TRUE),
+      input$tile == 'Success Rate' ~ mean(league_base$success, na.rm = TRUE),
+      TRUE ~ 1/12
+    )
+    
+    # League rank of this team's EPA/SR for each pass-location x depth-zone
+    # cell, ranked against every team's value for that same cell (1 = best)
+    league_zones <- league_base %>% 
+      mutate(depth_zone = case_when(
+        is_screen_pass ~ "Screen",
+        air_yards < 10 ~ "< 10 Yrds",
+        air_yards >= 10 & air_yards < 20 ~ "10-20 Yrds",
+        air_yards >= 20 ~ "20+ Yrds",
+        TRUE ~ NA_character_),
+        pass_location = case_when(
+          pass_location == 'right' ~ 'Right',
+          pass_location == 'middle' ~ 'Middle',
+          pass_location == 'left' ~ 'Left',
+          TRUE ~ pass_location
+        )
+      ) %>% 
+      mutate(pass_location = factor(pass_location, levels = c('Left','Middle','Right')),
+             depth_zone = factor(depth_zone, levels = c('Screen',"< 10 Yrds","10-20 Yrds","20+ Yrds"))) %>% 
+      group_by(posteam, pass_location, depth_zone, .drop = FALSE) %>% 
+      reframe(epa = mean(epa, na.rm = TRUE), sr = mean(success, na.rm = TRUE)) %>% 
+      group_by(pass_location, depth_zone) %>% 
+      mutate(epa_rank = dense_rank(-epa), sr_rank = dense_rank(-sr)) %>% 
+      ungroup()
+    
+    n_teams_pass <- league_zones %>% pull(posteam) %>% n_distinct()
+    
+    team_ranks <- league_zones %>% 
+      filter(posteam == applied_overview_4$tm) %>% 
+      select(pass_location, depth_zone, epa_rank, sr_rank)
     
     pass <- pass_plays %>% 
       mutate(depth_zone = case_when(
@@ -1580,7 +1895,10 @@ server <- function(input, output) {
       reframe(plays = n(),
               sr = mean(success),
               epa = mean(epa)) %>% 
-      mutate(label = paste0('EPA: ', round(epa, 2), ' | SR: ',percent(sr, accuracy = .1), '\n', plays, ' plays'),
+      left_join(team_ranks, by = c('pass_location','depth_zone')) %>% 
+      mutate(label = paste0('EPA: ', round(epa, 2), ' (', epa_rank, '/', n_teams_pass, ')',
+                            '\nSR: ', percent(sr, accuracy = .1), ' (', sr_rank, '/', n_teams_pass, ')',
+                            '\n', plays, ' plays'),
              freq = plays/sum(plays),
              fill_color = case_when(
                input$tile == 'EPA/Play' ~ epa,
@@ -1592,7 +1910,7 @@ server <- function(input, output) {
     
     ggplot(pass, aes(x = pass_location, y = depth_zone, fill = fill_color)) +
       geom_tile() +
-      geom_label(aes(label = label), fill = 'white') +
+      geom_label(aes(label = label), fill = 'white', color = 'black', fontface = 'bold', size = 4.5, lineheight = 1.1) +
       # Vertical grid
       geom_segment(aes(x = 1.5, xend = 1.5, y = 0.5,yend = 4.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = 2.5, xend = 2.5, y = 0.5,yend = 4.5), size = 1.5, color = 'white') +
@@ -1600,12 +1918,12 @@ server <- function(input, output) {
       geom_segment(aes(x = .5, xend = 3.5, y = 1.5,yend = 1.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 2.5,yend = 2.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 3.5,yend = 3.5), size = 1.5, color = 'white') +
-      scale_fill_continuous(low = '#4B0092', high = '#1AFF1A'
+      scale_fill_gradient2(low = '#4B0092', mid = "#DDDDDD", high = '#1AFF1A', midpoint = league_mid
       ) +
       labs(
         title = paste0(team_name, ' Pass Plays | ',total_plays, ' plays'),
         subtitle = subtitle,
-        caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Tile Color** = ", input$tile),
+        caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Tile Color** = ", input$tile, " vs league average | Ranks (1 = best) are vs all teams for that cell"),
         x = 'Pass Location',
         y = 'Air Yards'
       ) +
@@ -1617,12 +1935,14 @@ server <- function(input, output) {
   output$run_chart <- renderPlot({
     rush_data <- app_data$full_data %>% 
       filter(posteam == applied_overview_4$tm &
-             between(week, as.numeric(min(applied_overview_4$week)), max(applied_overview_4$week)) &
-             between(wp, min(applied_overview_4$wp)/100, max(applied_overview_4$wp)/100) &
-             down %in% applied_overview_4$down &
-             qtr %in% applied_overview_4$qtr &
-             dist %in% applied_overview_4$dist &
-             (rush == 1| qb_scramble == 1) ) 
+               between(week, as.numeric(min(applied_overview_4$week)), max(applied_overview_4$week)) &
+               between(wp, min(applied_overview_4$wp)/100, max(applied_overview_4$wp)/100) &
+               down %in% applied_overview_4$down &
+               qtr %in% applied_overview_4$qtr &
+               dist %in% applied_overview_4$dist &
+               season %in% applied_overview_4$season &
+               (rush == 1| qb_scramble == 1) &
+               (offense_p %in% applied_overview_4$personnel)) 
     rush <- rush_data %>% 
       group_by(run_location, run_gap, penalty) %>% 
       reframe(plays = n(),
@@ -1645,22 +1965,73 @@ server <- function(input, output) {
       filter(team_abbr == applied_overview_4$tm) %>% 
       pull(team_name)
     
-    subtitle <- paste0("2025 Season • Weeks ", min(rush_data$week), "-", max(rush_data$week), 
+    subtitle <- paste0(paste(sort(applied_overview_4$season), collapse = ", "), " Season(s) • Weeks ", min(rush_data$week), "-", max(rush_data$week), 
                        " • Win Probability ", min(applied_overview_4$wp), "%-", max(applied_overview_4$wp), "%",
                        if(length(applied_overview_4$down) < 4) paste0(" • Downs: ", paste(applied_overview_4$down, collapse=", ")) else " • All Downs ",
                        if(length(applied_overview_4$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_4$qtr), collapse=", ")) else " • All Qtrs ",
-                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances")
+                       if(length(applied_overview_4$dist) < 5) paste0(" • Distances: ", paste(applied_overview_4$dist, collapse=", ")) else " • All Distances",
+                       if(length(applied_overview_4$personnel) < length(personnel_choices)) paste0(" • Personnel: ", paste(applied_overview_4$personnel, collapse = ', ')) else "")
     
-    avg_epa <- mean(rush$epa)
+    avg_epa <- app_data$full_data %>% 
+      filter(between(week, as.numeric(min(applied_overview_4$week)), max(applied_overview_4$week)) &
+               between(wp, min(applied_overview_4$wp)/100, max(applied_overview_4$wp)/100) &
+               down %in% applied_overview_4$down &
+               qtr %in% applied_overview_4$qtr &
+               dist %in% applied_overview_4$dist &
+               season %in% applied_overview_4$season &
+               (rush == 1| qb_scramble == 1) &
+               (offense_p %in% applied_overview_4$personnel)) %>% 
+      pull(epa) %>% 
+      mean(na.rm = TRUE)
     total_runs <- sum(rush$plays)
-
+    
+    # League rank of this team's EPA/SR for each run gap, ranked against
+    # every team's value for that same gap (1 = best)
+    league_rush <- app_data$full_data %>% 
+      filter(between(week, as.numeric(min(applied_overview_4$week)), max(applied_overview_4$week)) &
+               between(wp, min(applied_overview_4$wp)/100, max(applied_overview_4$wp)/100) &
+               down %in% applied_overview_4$down &
+               qtr %in% applied_overview_4$qtr &
+               dist %in% applied_overview_4$dist &
+               season %in% applied_overview_4$season &
+               (rush == 1| qb_scramble == 1) &
+               (offense_p %in% applied_overview_4$personnel)) %>% 
+      group_by(posteam, run_location, run_gap, penalty) %>% 
+      reframe(sr = mean(success), epa = mean(epa)) %>% 
+      mutate(gap_side = case_when(
+        run_location == 'left' & run_gap == 'end' ~ 'Left End',
+        run_location == 'left' & run_gap == 'guard' ~ 'Left Guard',
+        run_location == 'left' & run_gap == 'tackle' ~ 'Left Tackle',
+        run_location == 'right' & run_gap == 'end' ~ 'Right End',
+        run_location == 'right' & run_gap == 'guard' ~ 'Right Guard',
+        run_location == 'right' & run_gap == 'tackle' ~ 'Right Tackle',
+        run_location == 'middle' ~ 'Middle',
+        is.na(run_gap) & is.na(run_location) ~ 'Other'
+      )) %>% 
+      filter(gap_side != 'Other' & penalty != 1) %>% 
+      group_by(gap_side) %>% 
+      mutate(epa_rank = dense_rank(-epa), sr_rank = dense_rank(-sr)) %>% 
+      ungroup()
+    
+    n_teams_run <- league_rush %>% pull(posteam) %>% n_distinct()
+    
+    team_gap_ranks <- league_rush %>% 
+      filter(posteam == applied_overview_4$tm) %>% 
+      select(gap_side, epa_rank, sr_rank)
+    
     segments_data <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
-      x_start = rep(3, 7),
-      y_start = rep(0.98, 7),
-      x_end = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
-      y_end = rep(1.002, 7)
+      # Top part of Line (From RB to angle change)
+      x_start_top = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
+      y_start_top = rep(.99, 7),
+      x_end_top = rep(3, 7),
+      y_end_top = rep(0.981, 7),
+      # Bottom part of line (Angle to LOS)
+      x_start_bot = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
+      y_start_bot = rep(0.99, 7),
+      x_end_bot = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
+      y_end_bot = rep(1.002, 7)
     ) %>%
       left_join(rush, by = 'gap_side')
     
@@ -1673,11 +2044,18 @@ server <- function(input, output) {
     labels_data <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
-      x = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
-      y = rep(1.0035, 7)
+      # Label x-positions are spread wider than the arrow tips (below) for
+      # the three closely-packed middle gaps (LG/C/RG are only 0.5 apart),
+      # so the label boxes get breathing room even though the arrows still
+      # point at the true gap locations.
+      x = c(0.3, 1.5, 2.15, 3, 3.85, 4.5, 5.7),
+      y = rep(c(1.008, 1.016), length.out = 7)
     ) %>%
       left_join(rush, by = 'gap_side') %>%
-      mutate(label_text = paste0(round(epa,2),"\n(", percent(sr, accuracy = 0.1), " SR)"))
+      left_join(team_gap_ranks, by = 'gap_side') %>%
+      mutate(label_text = paste0(round(epa,2), " (", epa_rank, "/", n_teams_run, ")",
+                                 "\n", percent(sr, accuracy = 0.1), " SR (", sr_rank, "/", n_teams_run, ")",
+                                 "\n Carries: ",plays))
     
     mid_color = "#DDDDDD"
     low_color = '#4B0092'
@@ -1695,31 +2073,32 @@ server <- function(input, output) {
       geom_segment(aes(x = -1, y = 1, xend = 7, yend = 1), 
                    linewidth = 2, lineend = 'butt', linejoin = 'bevel', 
                    color = 'white') +
-      geom_segment(data = segments_data,
-                   aes(x = x_start, y = y_start, xend = x_end, yend = y_end, 
-                       color = epa, linewidth = freq),
+      geom_segment(data = segments_data, 
+                   aes(x = x_start_bot, y = y_start_bot, xend = x_end_bot, yend = y_end_bot, 
+                       color = epa, linewidth = freq, linetype = 'round'),
                    lineend = 'round', linejoin = 'round', 
                    arrow = arrow(type = 'closed',length = unit(0.3, 'inches'))) +
+      geom_segment(data = segments_data,
+                   aes(x = x_start_top, y = y_start_top, xend = x_end_top, yend = y_end_top,
+                       color = epa, linewidth = freq, linetype = 'round'),
+                   lineend = 'round', linejoin = 'round') +
       geom_point(aes(x = 3, y = .98), color = '#468944', size = 10) + 
       geom_shadowtext(data = oline, aes(x = x, y = y, label = position), 
                       fontface = 'bold', size = 10, bg.color = 'grey10') +
       geom_label(data = labels_data, 
                  aes(x = x, y = y, label = label_text),
-                 color = 'black', fill = 'white',
-                 size = 4, lineheight = 0.9) +
-      geom_text(data = play_totals, 
-                aes(x = x, y = y, label = plays),
-                size = 10, lineheight = 0.9) +
+                 color = 'black', fill = 'white', fontface = 'bold',
+                 size = 5, lineheight = 0.9) +
       scale_color_gradient2(low = low_color, mid = mid_color, high = high_color,
                             midpoint = avg_epa,
                             name = "EPA/Play") +
-      coord_cartesian(xlim = c(0, 6), ylim = c(0.975, 1.01)) +
+      coord_cartesian(xlim = c(0, 6), ylim = c(0.98, 1.02)) +
       labs(
         title = paste0(team_name, ' Run Plays & QB Scrambles By Location | ', total_runs,' Plays'),
         subtitle = subtitle,
         caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Arrow color** = EPA/Play",
-        # | **Label** = EPA/Play (Success Rate)
-        " | **Line Width** = Frequency"),
+                         # | **Label** = EPA/Play (Success Rate)
+                         " | **Line Width** = Frequency | Ranks (1 = best) are vs all teams for that gap"),
         x = '',
         y = ''
       ) +
@@ -1740,16 +2119,54 @@ server <- function(input, output) {
     wp = c(5,95),
     dist = c('10+','10-7','6-4','3-1','GTG'),
     down = 1:4,
-    qtr = 1:5
+    qtr = 1:5,
+    season = most_recent_season(),
+    personnel = personnel_choices
   )
   
   observeEvent(input$apply_filters_5, {
     applied_overview_5$tm <- input$t_2
     applied_overview_5$week <- input$week_5
     applied_overview_5$wp <- input$wp_5
-    applied_overview_5$dist <- input$dist_2
-    applied_overview_5$down <- input$down_5  
-    applied_overview_5$qtr <- input$qtr_5
+    applied_overview_5$dist <- or_all(input$dist_2, c('10+','10-7','6-4','3-1','GTG'))
+    applied_overview_5$down <- or_all(input$down_5, 1:4)
+    applied_overview_5$qtr <- or_all(input$qtr_5, 1:5)
+    applied_overview_5$season <- or_all(input$season_5, c(2023,2024,2025))
+    applied_overview_5$personnel <- or_all(input$personnel_2, personnel_choices)
+  })
+  
+  output$kpi_5 <- renderUI({
+    base <- app_data$full_data %>% 
+      filter(between(week, as.numeric(min(applied_overview_5$week)), max(applied_overview_5$week)),
+             between(wp, min(applied_overview_5$wp)/100, max(applied_overview_5$wp)/100),
+             down %in% applied_overview_5$down,
+             qtr %in% applied_overview_5$qtr,
+             dist %in% applied_overview_5$dist,
+             season %in% applied_overview_5$season,
+             penalty == 0,
+             playType %in% c("Run","Pass"),
+             (offense_p %in% applied_overview_5$personnel))
+    
+    team_stats <- base %>% 
+      group_by(defteam) %>% 
+      reframe(epa = mean(epa, na.rm = TRUE), sr = mean(success, na.rm = TRUE), plays = n()) %>% 
+      mutate(rank = dense_rank(epa))
+    print(team_stats |> filter(defteam == 'ARI'))
+    this_team <- team_stats %>% filter(defteam == applied_overview_5$tm)
+    print(this_team)
+    n_teams <- team_stats %>% pull(defteam) %>% n_distinct()
+    
+    team_colors <- teams_colors_logos %>% filter(team_abbr == applied_overview_5$tm)
+    c1 <- team_colors %>% pull(team_color)
+    c2 <- team_colors %>% pull(team_color2)
+    
+    layout_column_wrap(
+      width = 1/4,
+      value_box(title = "EPA / play allowed", value = round(this_team$epa, 3), theme = value_box_theme(bg = c1, fg = "white")),
+      value_box(title = "Success rate allowed", value = scales::percent(this_team$sr, accuracy = 0.1), theme = value_box_theme(bg = c2, fg = "white")),
+      value_box(title = "Total plays", value = this_team$plays, theme = value_box_theme(bg = c1, fg = "white")),
+      value_box(title = "League rank", value = paste0(this_team$rank, " of ", n_teams), theme = value_box_theme(bg = c2, fg = "white"))
+    )
   })
   
   output$pbp_table_def <- render_gt({
@@ -1761,35 +2178,67 @@ server <- function(input, output) {
              down %in% applied_overview_5$down,
              qtr %in% applied_overview_5$qtr,
              dist %in% applied_overview_5$dist,
+             season %in% applied_overview_5$season,
              penalty == 0,
-             playType %in% c("Run","Pass")) %>% 
+             playType %in% c("Run","Pass"),
+             (offense_p %in% applied_overview_5$personnel)) %>% 
       arrange(week, game_id, play_id)
     
     team_name <- teams_colors_logos %>% 
       filter(team_abbr == applied_overview_5$tm) %>% 
       pull(team_name)
     
-    subtitle <- paste0("2025 Season • Weeks ", min(play_table$week), "-", max(play_table$week), 
+    subtitle <- paste0(paste(sort(applied_overview_5$season), collapse = ", "), " Season(s) • Weeks ", min(play_table$week), "-", max(play_table$week), 
                        " • Win Probability ", min(applied_overview_5$wp), "%-", max(applied_overview_5$wp), "%",
                        if(length(applied_overview_5$down) < 4) paste0(" • Downs: ", paste(applied_overview_5$down, collapse=", ")) else " • All Downs ",
                        if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else " • All Qtrs ",
-                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances")
+                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances",
+                       if(length(applied_overview_5$personnel) < length(personnel_choices)) paste0(" • Personnel: ", paste(applied_overview_5$personnel, collapse = ', ')) else "")
     
     play_table %>% 
       select(week, posteam_wordmark, defteam_wordmark,
-             qtr, down,ydstogo, yrdln, yards_gained,playType, epa,desc) %>%  
+             qtr, down,ydstogo, yrdln, yards_gained,playType, offense_p, epa,desc) %>%  
       gt() %>% 
       cols_label(qtr = 'Quarter',down = 'Down',ydstogo = 'To Go',yrdln = 'Yard Line',
-        yards_gained = 'Yards Gained',playType = 'Play Type', epa = 'EPA',
-        desc = 'Play Description', week = 'Week') %>% 
+                 yards_gained = 'Yards Gained',playType = 'Play Type', offense_p = 'Personnel', epa = 'EPA',
+                 desc = 'Play Description', week = 'Week') %>% 
       cols_label(posteam_wordmark = 'Offense', defteam_wordmark = 'Defense') %>%
       tab_header(title = paste0(team_name, ' Defensive Play Table'), subtitle = subtitle) %>% 
       fmt_number(columns = epa) %>% 
-      data_color(columns = epa, domain = c(-3,3), palette = c('#1AFF1A','#4B0092')) %>%
-      data_color(playType, palette = c('red','blue')) %>% 
+      # Colored pill for Play Type, replacing the flat data_color fill
+      text_transform(
+        locations = cells_body(columns = playType),
+        fn = function(x) {
+          pill_color <- if_else(x == 'Pass', '#457B9D', '#2A9D8F')
+          paste0("<span style='background:", pill_color, "22; color:", pill_color, 
+                 "; padding:2px 10px; border-radius:10px; font-size:12px; font-weight:bold;'>", x, "</span>")
+        }
+      ) %>% 
+      # Inline EPA bar: same zero-centered diverging bar as the offensive
+      # table, but color flipped since a lower EPA allowed is the good
+      # outcome on defense
+      text_transform(
+        locations = cells_body(columns = epa),
+        fn = function(x) {
+          x <- gsub("\u2212", "-", x)  # gt formats negatives with a Unicode minus sign, not ASCII "-"
+          val <- as.numeric(x)
+          val <- if_else(is.na(val), 0, val)
+          magnitude <- pmin(abs(val) / 3, 1) * 50
+          bar_color <- if_else(val <= 0, '#4B0092','#1AFF1A')
+          left_pos <- if_else(val >= 0, 50, 50 - magnitude)
+          paste0(
+            "<div style='display:flex; align-items:center; gap:6px;'>",
+            "<div style='position:relative; width:40px; height:6px; background:#EAEAEA; border-radius:3px; overflow:hidden;'>",
+            "<div style='position:absolute; left:50%; top:0; bottom:0; width:1px; background:#999;'></div>",
+            "<div style='position:absolute; left:", left_pos, "%; top:0; height:100%; width:", magnitude, "%; background:", bar_color, ";'></div>",
+            "</div>",
+            "<span>", round(val, 2), "</span></div>"
+          )
+        }
+      ) %>% 
       gt_img_rows(columns = posteam_wordmark) %>%
-      gt_img_rows(columns = defteam_wordmark) 
-
+      gt_img_rows(columns = defteam_wordmark)
+    
     
   })
   output$pass_chart_def <- renderPlot({
@@ -1800,17 +2249,67 @@ server <- function(input, output) {
              down %in% applied_overview_5$down,
              qtr %in% applied_overview_5$qtr,
              dist %in% applied_overview_5$dist,
-             pass == 1 & !is.na(pass_location))
+             season %in% applied_overview_5$season,
+             pass == 1 & !is.na(pass_location),
+             (offense_p %in% applied_overview_5$personnel))
     
     team_name <- teams_colors_logos %>% 
       filter(team_abbr == applied_overview_5$tm) %>% 
       pull(team_name)
     
-    subtitle <- paste0("2025 Season • Weeks ", min(pass_plays$week), "-", max(pass_plays$week), 
+    subtitle <- paste0(paste(sort(applied_overview_5$season), collapse = ", "), " Season(s) • Weeks ", min(pass_plays$week), "-", max(pass_plays$week), 
                        " • Win Probability ", min(applied_overview_5$wp), "%-", max(applied_overview_5$wp), "%",
                        if(length(applied_overview_5$down) < 4) paste0(" • Downs: ", paste(applied_overview_5$down, collapse=", ")) else " • All Downs ",
                        if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else " • All Qtrs ",
-                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances")
+                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances",
+                       if(length(applied_overview_5$personnel) < length(personnel_choices)) paste0(" • Personnel: ", paste(applied_overview_5$personnel, collapse = ', ')) else "")
+    
+    league_base <- app_data$full_data %>% 
+      filter(between(week, as.numeric(min(applied_overview_5$week)), max(applied_overview_5$week)),
+             between(wp, min(applied_overview_5$wp)/100, max(applied_overview_5$wp)/100),
+             down %in% applied_overview_5$down,
+             qtr %in% applied_overview_5$qtr,
+             dist %in% applied_overview_5$dist,
+             season %in% applied_overview_5$season,
+             pass == 1 & !is.na(pass_location),
+             (offense_p %in% applied_overview_5$personnel))
+    
+    league_mid <- case_when(
+      input$tile_2 == 'EPA/Play' ~ mean(league_base$epa, na.rm = TRUE),
+      input$tile_2 == 'Success Rate' ~ mean(league_base$success, na.rm = TRUE),
+      TRUE ~ -1/12
+    )
+    
+    # League rank of this defense's EPA/SR allowed for each pass-location x
+    # depth-zone cell, ranked against every defense's value for that same
+    # cell (1 = best, i.e. lowest EPA/SR allowed)
+    league_zones <- league_base %>% 
+      mutate(depth_zone = case_when(
+        is_screen_pass ~ "Screen",
+        air_yards < 10 ~ "< 10 Yrds",
+        air_yards >= 10 & air_yards < 20 ~ "10-20 Yrds",
+        air_yards >= 20 ~ "20+ Yrds",
+        TRUE ~ NA_character_),
+        pass_location = case_when(
+          pass_location == 'right' ~ 'Right',
+          pass_location == 'middle' ~ 'Middle',
+          pass_location == 'left' ~ 'Left',
+          TRUE ~ pass_location
+        )
+      ) %>% 
+      mutate(pass_location = factor(pass_location, levels = c('Left','Middle','Right')),
+             depth_zone = factor(depth_zone, levels = c('Screen',"< 10 Yrds","10-20 Yrds","20+ Yrds"))) %>% 
+      group_by(defteam, pass_location, depth_zone, .drop = FALSE) %>% 
+      reframe(epa = mean(epa, na.rm = TRUE), sr = mean(success, na.rm = TRUE)) %>% 
+      group_by(pass_location, depth_zone) %>% 
+      mutate(epa_rank = dense_rank(epa), sr_rank = dense_rank(sr)) %>% 
+      ungroup()
+    
+    n_teams_pass <- league_zones %>% pull(defteam) %>% n_distinct()
+    
+    team_ranks <- league_zones %>% 
+      filter(defteam == applied_overview_5$tm) %>% 
+      select(pass_location, depth_zone, epa_rank, sr_rank)
     
     pass <- pass_plays %>% 
       mutate(depth_zone = case_when(
@@ -1833,7 +2332,10 @@ server <- function(input, output) {
       reframe(plays = n(),
               sr = mean(success),
               epa = mean(epa)) %>% 
-      mutate(label = paste0('EPA: ', round(epa, 2), ' | SR: ',percent(sr, accuracy = .1), '\n', plays, ' plays'),
+      left_join(team_ranks, by = c('pass_location','depth_zone')) %>% 
+      mutate(label = paste0('EPA: ', round(epa, 2), ' (', epa_rank, '/', n_teams_pass, ')',
+                            '\nSR: ', percent(sr, accuracy = .1), ' (', sr_rank, '/', n_teams_pass, ')',
+                            '\n', plays, ' plays'),
              freq = plays/sum(plays),
              fill_color = case_when(
                input$tile_2 == 'EPA/Play' ~ epa,
@@ -1844,7 +2346,7 @@ server <- function(input, output) {
     
     ggplot(pass, aes(x = pass_location, y = depth_zone, fill = fill_color)) +
       geom_tile() +
-      geom_label(aes(label = label), fill = 'white') +
+      geom_label(aes(label = label), fill = 'white', color = 'black', fontface = 'bold', size = 4.5, lineheight = 1.1) +
       # Vertical grid
       geom_segment(aes(x = 1.5, xend = 1.5, y = 0.5,yend = 4.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = 2.5, xend = 2.5, y = 0.5,yend = 4.5), size = 1.5, color = 'white') +
@@ -1852,11 +2354,11 @@ server <- function(input, output) {
       geom_segment(aes(x = .5, xend = 3.5, y = 1.5,yend = 1.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 2.5,yend = 2.5), size = 1.5, color = 'white') +
       geom_segment(aes(x = .5, xend = 3.5, y = 3.5,yend = 3.5), size = 1.5, color = 'white') +
-      scale_fill_continuous(high = '#4B0092', low = '#1AFF1A') +
+      scale_fill_gradient2(low = '#1AFF1A', mid = "#DDDDDD", high = '#4B0092', midpoint = league_mid) +
       labs(
         title = paste0(team_name, ' Defensive Pass Plays | ',total_plays, ' plays'),
         subtitle = subtitle,
-        caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Tile Color** = ", input$tile_2),
+        caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Tile Color** = ", input$tile_2, " vs league average | Ranks (1 = best) are vs all teams for that cell"),
         x = 'Pass Location',
         y = 'Air Yards',
         x = '',
@@ -1873,7 +2375,9 @@ server <- function(input, output) {
                down %in% applied_overview_5$down &
                qtr %in% applied_overview_5$qtr &
                dist %in% applied_overview_5$dist &
-               (rush == 1| qb_scramble == 1) ) 
+               season %in% applied_overview_5$season &
+               (rush == 1| qb_scramble == 1) &
+               (offense_p %in% applied_overview_5$personnel)) 
     rush <- rush_data %>% 
       group_by(run_location, run_gap, penalty) %>% 
       reframe(plays = n(),
@@ -1896,22 +2400,74 @@ server <- function(input, output) {
       filter(team_abbr == applied_overview_5$tm) %>% 
       pull(team_name)
     
-    subtitle <- paste0("2025 Season • Weeks ", min(rush_data$week), "-", max(rush_data$week), 
+    subtitle <- paste0(paste(sort(applied_overview_5$season), collapse = ", "), " Season(s) • Weeks ", min(rush_data$week), "-", max(rush_data$week), 
                        " • Win Probability ", min(applied_overview_5$wp), "%-", max(applied_overview_5$wp), "%",
                        if(length(applied_overview_5$down) < 4) paste0(" • Downs: ", paste(applied_overview_5$down, collapse=", ")) else " • All Downs ",
                        if(length(applied_overview_5$qtr) < 5) paste0(" • Qtrs: ", paste(gsub("5", "OT", applied_overview_5$qtr), collapse=", ")) else " • All Qtrs ",
-                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances")
+                       if(length(applied_overview_5$dist) < 5) paste0(" • Distances: ", paste(applied_overview_5$dist, collapse=", ")) else " • All Distances",
+                       if(length(applied_overview_5$personnel) < length(personnel_choices)) paste0(" • Personnel: ", paste(applied_overview_5$personnel, collapse = ', ')) else "")
     
-    avg_epa <- mean(rush$epa)
+    avg_epa <- app_data$full_data %>% 
+      filter(between(week, as.numeric(min(applied_overview_5$week)), max(applied_overview_5$week)) &
+               between(wp, min(applied_overview_5$wp)/100, max(applied_overview_5$wp)/100) &
+               down %in% applied_overview_5$down &
+               qtr %in% applied_overview_5$qtr &
+               dist %in% applied_overview_5$dist &
+               season %in% applied_overview_5$season &
+               (rush == 1| qb_scramble == 1) &
+               (offense_p %in% applied_overview_5$personnel)) %>% 
+      pull(epa) %>% 
+      mean(na.rm = TRUE)
     total_runs <- sum(rush$plays)
-
+    
+    # League rank of this defense's EPA/SR allowed for each run gap, ranked
+    # against every defense's value for that same gap (1 = best, i.e.
+    # lowest EPA/SR allowed)
+    league_rush <- app_data$full_data %>% 
+      filter(between(week, as.numeric(min(applied_overview_5$week)), max(applied_overview_5$week)) &
+               between(wp, min(applied_overview_5$wp)/100, max(applied_overview_5$wp)/100) &
+               down %in% applied_overview_5$down &
+               qtr %in% applied_overview_5$qtr &
+               dist %in% applied_overview_5$dist &
+               season %in% applied_overview_5$season &
+               (rush == 1| qb_scramble == 1) &
+               (offense_p %in% applied_overview_5$personnel)) %>% 
+      group_by(defteam, run_location, run_gap, penalty) %>% 
+      reframe(sr = mean(success), epa = mean(epa)) %>% 
+      mutate(gap_side = case_when(
+        run_location == 'left' & run_gap == 'end' ~ 'Left End',
+        run_location == 'left' & run_gap == 'guard' ~ 'Left Guard',
+        run_location == 'left' & run_gap == 'tackle' ~ 'Left Tackle',
+        run_location == 'right' & run_gap == 'end' ~ 'Right End',
+        run_location == 'right' & run_gap == 'guard' ~ 'Right Guard',
+        run_location == 'right' & run_gap == 'tackle' ~ 'Right Tackle',
+        run_location == 'middle' ~ 'Middle',
+        is.na(run_gap) & is.na(run_location) ~ 'Other'
+      )) %>% 
+      filter(gap_side != 'Other' & penalty != 1) %>% 
+      group_by(gap_side) %>% 
+      mutate(epa_rank = dense_rank(epa), sr_rank = dense_rank(sr)) %>% 
+      ungroup()
+    
+    n_teams_run <- league_rush %>% pull(defteam) %>% n_distinct()
+    
+    team_gap_ranks <- league_rush %>% 
+      filter(defteam == applied_overview_5$tm) %>% 
+      select(gap_side, epa_rank, sr_rank)
+    
     segments_data <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
-      x_start = rep(3, 7),
-      y_start = rep(0.98, 7),
-      x_end = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
-      y_end = rep(1.002, 7)
+      # Top part of Line (From RB to angle change)
+      x_start_top = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
+      y_start_top = rep(.99, 7),
+      x_end_top = rep(3, 7),
+      y_end_top = rep(0.981, 7),
+      # Bottom part of line (Angle to LOS)
+      x_start_bot = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
+      y_start_bot = rep(0.99, 7),
+      x_end_bot = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
+      y_end_bot = rep(1.002, 7)
     ) %>%
       left_join(rush, by = 'gap_side')
     
@@ -1924,11 +2480,19 @@ server <- function(input, output) {
     labels_data <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
                    'Right Guard', 'Right Tackle', 'Right End'),
-      x = c(0.5, 1.5, 2.5, 3, 3.5, 4.5, 5.5),
-      y = rep(1.0035, 7)
+      # Label x-positions are spread wider than the arrow tips (below) for
+      # the three closely-packed middle gaps (LG/C/RG are only 0.5 apart),
+      # so the label boxes get breathing room even though the arrows still
+      # point at the true gap locations.
+      x = c(0.3, 1.5, 2.15, 3, 3.85, 4.5, 5.7),
+      y = rep(c(1.008, 1.016), length.out = 7)
     ) %>%
       left_join(rush, by = 'gap_side') %>%
-      mutate(label_text = paste0(round(epa,2),"\n(", percent(sr, accuracy = 0.1), " SR)"))
+      left_join(team_gap_ranks, by = 'gap_side') %>%
+      mutate(label_text = paste0(round(epa,2), " (", epa_rank, "/", n_teams_run, ")",
+                                 "\n", percent(sr, accuracy = 0.1), " SR (", sr_rank, "/", n_teams_run, ")",
+                                 "\n Carries: ",plays))
+    
     
     play_totals <- data.frame(
       gap_side = c('Left End', 'Left Tackle', 'Left Guard', 'Middle', 
@@ -1938,7 +2502,7 @@ server <- function(input, output) {
     ) %>%
       left_join(rush, by = 'gap_side')
     
-  
+    
     mid_color = "#DDDDDD"
     high_color = '#4B0092'
     low_color = '#1AFF1A'
@@ -1947,32 +2511,33 @@ server <- function(input, output) {
       geom_segment(aes(x = -1, y = 1, xend = 7, yend = 1), 
                    linewidth = 2, lineend = 'butt', linejoin = 'bevel', 
                    color = 'white') +
-      geom_segment(data = segments_data,
-                   aes(x = x_start, y = y_start, xend = x_end, yend = y_end, 
-                       color = epa, linewidth = freq),
+      geom_segment(data = segments_data, 
+                   aes(x = x_start_bot, y = y_start_bot, xend = x_end_bot, yend = y_end_bot, 
+                       color = epa, linewidth = freq, linetype = 'round'),
                    lineend = 'round', linejoin = 'round', 
                    arrow = arrow(type = 'closed',length = unit(0.3, 'inches'))) +
+      geom_segment(data = segments_data,
+                   aes(x = x_start_top, y = y_start_top, xend = x_end_top, yend = y_end_top,
+                       color = epa, linewidth = freq, linetype = 'round'),
+                   lineend = 'round', linejoin = 'round') +
       geom_point(aes(x = 3, y = .98), color = '#468944', size = 10) + 
       geom_shadowtext(data = oline, aes(x = x, y = y, label = position), 
                       fontface = 'bold', size = 10, bg.color = 'grey10') +
       geom_label(data = labels_data, 
                  aes(x = x, y = y, label = label_text), 
-                 color = 'black', fill = 'white',
-                 size = 4, lineheight = 0.9) +
-      geom_text(data = play_totals, 
-                aes(x = x, y = y, label = plays),
-                size = 10, lineheight = 0.9) +
+                 color = 'black', fill = 'white', fontface = 'bold',
+                 size = 5, lineheight = 0.9) +
       scale_color_gradient2(low = low_color, mid = mid_color, high = high_color,
                             midpoint = avg_epa,
                             name = "EPA/Play") +
-      coord_cartesian(xlim = c(0, 6), ylim = c(0.975, 1.01)) +
+      coord_cartesian(xlim = c(0, 6), ylim = c(0.98, 1.02)) +
       
       labs(
         title = paste0(team_name, ' Defensive Run Plays & QB Scrambles By Location | ', total_runs,' Plays'),
         subtitle = subtitle,
         caption = paste0("**Analysis:** @arieizen | **Data:** nflfastR | **Arrow color** = EPA/Play",
                          # | **Label** = EPA/Play (Success Rate)
-                         " | **Line Width** = Frequency"),
+                         " | **Line Width** = Frequency | Ranks (1 = best) are vs all teams for that gap"),
         x = '',
         y = ''
       ) +
@@ -1982,7 +2547,7 @@ server <- function(input, output) {
         axis.text = element_blank()
       )
   })
-
+  
 }
 
 # Run the application 

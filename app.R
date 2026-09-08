@@ -519,7 +519,7 @@ icon <- div(
            padding: 8px 15px; border-radius: 5px; 
            font-weight: bold; font-size: 12px; 
            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);",
-  "By: @AriEizen | Data: nflfastR/Wikipedia | Inspo: @reinhardNFL"
+  "By: @AriEizen | Data: nflfastR/Wikipedia | Inspo: @reinhardNFL/@csv_enjoyer"
 )
 
 ui <- navbarPage(

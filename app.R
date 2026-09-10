@@ -66,6 +66,24 @@ seq_table <- function(play_data, pbp_data){
   # print(seq_chart)
   new_table <- c()
   tms <- seq_chart %>% pull(posteam) %>% unique()
+  
+  # Guard: if the filters (season/week/etc.) match zero rows, `tms` is
+  # empty, the loop below never runs, and `new_table` stays NULL — which
+  # crashes downstream when piped into arrange()/mutate() (arrange()
+  # requires a data frame, not NULL). Return a properly-typed empty
+  # tibble instead so the caller can handle "no data" gracefully.
+  if (length(tms) == 0) {
+    return(tibble(
+      posteam = character(), primary = character(), secondary = character(),
+      tertiary = character(), wordmark = character(),
+      EPA = numeric(), SR = numeric(), plays = numeric(),
+      PP_EPA = numeric(), PP_SR = numeric(), PP_plays = numeric(),
+      PR_EPA = numeric(), PR_SR = numeric(), PR_plays = numeric(),
+      RP_EPA = numeric(), RP_SR = numeric(), RP_plays = numeric(),
+      RR_EPA = numeric(), RR_SR = numeric(), RR_plays = numeric()
+    ))
+  }
+  
   for (tm in tms) {
     primary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color) %>% unique() 
     secondary <- seq_chart %>% filter(posteam == tm) %>% pull(team_color2) %>% unique() 
@@ -196,8 +214,8 @@ calculate_league_averages <- function(play_data, pbp_data) {
     round(3) %>%
     unique()
   
-  plays <- (pbp_data %>% nrow()/pbp_data %>% pull(posteam) %>% unique() %>% length()) %>%
-    round()
+  n_teams_overall <- pbp_data %>% pull(posteam) %>% unique() %>% length()
+  plays <- if (n_teams_overall == 0) 0 else round(pbp_data %>% nrow() / n_teams_overall)
   
   # Get Pass-Pass Metrics
   PP_SR <- seq_avg %>% 
@@ -209,9 +227,8 @@ calculate_league_averages <- function(play_data, pbp_data) {
     pull(EPA) %>% 
     round(3)
   
-  PP_plays <- (play_data %>% filter(seq_group == 'Pass-Pass') %>% nrow()/
-                 play_data %>% filter(seq_group == 'Pass-Pass') %>% pull(posteam) %>% unique() %>% length()) %>%
-    round()
+  n_teams_pp <- play_data %>% filter(seq_group == 'Pass-Pass') %>% pull(posteam) %>% unique() %>% length()
+  PP_plays <- if (n_teams_pp == 0) 0 else round(play_data %>% filter(seq_group == 'Pass-Pass') %>% nrow() / n_teams_pp)
   
   # Get Pass-Run Metrics
   PR_SR <- seq_avg %>% 
@@ -223,9 +240,8 @@ calculate_league_averages <- function(play_data, pbp_data) {
     pull(EPA) %>% 
     round(3)
   
-  PR_plays <- (play_data %>% filter(seq_group == 'Pass-Run') %>% nrow()/
-                 play_data %>% filter(seq_group == 'Pass-Run') %>% pull(posteam) %>% unique() %>% length()) %>%
-    round()
+  n_teams_pr <- play_data %>% filter(seq_group == 'Pass-Run') %>% pull(posteam) %>% unique() %>% length()
+  PR_plays <- if (n_teams_pr == 0) 0 else round(play_data %>% filter(seq_group == 'Pass-Run') %>% nrow() / n_teams_pr)
   
   # Get Run-Pass Metrics
   RP_SR <- seq_avg %>% 
@@ -237,9 +253,8 @@ calculate_league_averages <- function(play_data, pbp_data) {
     pull(EPA) %>% 
     round(3)
   
-  RP_plays <- (play_data %>% filter(seq_group == 'Run-Pass') %>% nrow()/
-                 play_data %>% filter(seq_group == 'Run-Pass') %>% pull(posteam) %>% unique() %>% length()) %>%
-    round()
+  n_teams_rp <- play_data %>% filter(seq_group == 'Run-Pass') %>% pull(posteam) %>% unique() %>% length()
+  RP_plays <- if (n_teams_rp == 0) 0 else round(play_data %>% filter(seq_group == 'Run-Pass') %>% nrow() / n_teams_rp)
   
   # Get Run-Run Metrics
   RR_SR <- seq_avg %>% 
@@ -251,9 +266,8 @@ calculate_league_averages <- function(play_data, pbp_data) {
     pull(EPA) %>% 
     round(3)
   
-  RR_plays <- (play_data %>% filter(seq_group == 'Run-Run') %>% nrow()/
-                 play_data %>% filter(seq_group == 'Run-Run') %>% pull(posteam) %>% unique() %>% length()) %>%
-    round()
+  n_teams_rr <- play_data %>% filter(seq_group == 'Run-Run') %>% pull(posteam) %>% unique() %>% length()
+  RR_plays <- if (n_teams_rr == 0) 0 else round(play_data %>% filter(seq_group == 'Run-Run') %>% nrow() / n_teams_rr)
   
   
   team_row <- data.frame(
@@ -423,6 +437,31 @@ create_sequence_matrix <- function(data, subtitle, team = 'DET', side = 'Off', c
   freq_data <- data %>%
     filter(.data[[team_col]] == team)
   
+  # Guard: if the current filters (week/qtr/down/personnel/etc.) exclude
+  # every play for this team, freq_data has 0 rows, so team_name/primary/
+  # secondary/third below all resolve to character(0) — which then breaks
+  # ggplot's labs()/theme() (title, colors) with an opaque error. Return a
+  # simple "no data" placeholder plot instead of crashing.
+  if (nrow(freq_data) == 0) {
+    return(
+      ggplot() +
+        annotate("text", x = 0.5, y = 0.5,
+                 label = paste0("No ", if (side == 'Off') "offensive" else "defensive",
+                                " sequence data for ", team, " with the current filters."),
+                 size = 6, fontface = "bold", color = "black") +
+        xlim(0, 1) + ylim(0, 1) +
+        labs(title = paste0(team, if (side == 'Off') ' Offensive' else ' Defensive', ' Sequence Efficiency'),
+             subtitle = subtitle) +
+        theme_void() +
+        theme(
+          plot.title = element_text(size = 22, face = "bold", hjust = 0.5),
+          plot.subtitle = element_text(size = 16, hjust = 0.5),
+          plot.background = element_rect(fill = "white", color = NA),
+          panel.background = element_rect(fill = "white", color = NA)
+        )
+    )
+  }
+  
   team_name <- freq_data %>% pull(team_name) %>% unique()
   primary <- freq_data %>% pull(team_color) %>% unique()
   secondary <- freq_data %>% pull(team_color2) %>% unique()
@@ -503,6 +542,19 @@ apply_theme <- function(){
 # `full` (the complete set of choices) whenever nothing is selected.
 or_all <- function(x, full) {
   if (is.null(x) || length(x) == 0) full else x
+}
+
+# Personnel charting data (offense_p) can lag behind the rest of the pbp
+# data — e.g. the most recent week(s) before load_participation() has
+# published data for them (see the data-freshness banner). When that
+# happens, offense_p is NA for those plays, and a plain `offense_p %in%
+# selected` filter drops them from every tab the instant a personnel
+# filter is applied — even at the default "all personnel selected" state,
+# since NA is never %in% anything. Treat missing-personnel plays as
+# matching any personnel filter (rather than silently vanishing) so
+# recent, not-yet-charted weeks still show up in every chart/table.
+personnel_match <- function(x, selected) {
+  is.na(x) | x %in% selected
 }
 
 # The full set of personnel groupings, used as both the picker choices
@@ -644,8 +696,8 @@ ui <- navbarPage(
                         column(1,
                                pickerInput('season',
                                            '',# "Season:",
-                                           choices = c(2023,2024,2025),
-                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           choices = c(2023:most_recent_season()),
+                                           selected = most_recent_season(), #,c(2023:most_recent_season()),
                                            multiple = TRUE,
                                            options = list(`actions-box` = TRUE, `selected-text-format`= "static",
                                                           title = "Season:")
@@ -828,8 +880,8 @@ ui <- navbarPage(
                         column(1,
                                pickerInput('season_2',
                                            '',# "Season:",
-                                           choices = c(2023,2024,2025),
-                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           choices = c(2023:most_recent_season()),
+                                           selected = most_recent_season(), #,c(2023:most_recent_season()),
                                            multiple = TRUE,
                                            options = list(`actions-box` = TRUE, `selected-text-format`= "static",
                                                           title = "Season:")
@@ -958,8 +1010,8 @@ ui <- navbarPage(
                         column(1,
                                pickerInput('season_3',
                                            '',# "Season:",
-                                           choices = c(2023,2024,2025),
-                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           choices = c(2023:most_recent_season()),
+                                           selected = most_recent_season(), #,c(2023:most_recent_season()),
                                            multiple = TRUE,
                                            options = list(`actions-box` = TRUE, `selected-text-format`= "static",
                                                           title = "Season:")
@@ -1079,8 +1131,8 @@ ui <- navbarPage(
                         column(1,
                                pickerInput('season_4',
                                            '',# "Season:",
-                                           choices = c(2023,2024,2025),
-                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           choices = c(2023:most_recent_season()),
+                                           selected = most_recent_season(), #,c(2023:most_recent_season()),
                                            multiple = TRUE,
                                            options = list(`actions-box` = TRUE, `selected-text-format`= "static",
                                                           title = "Season:")
@@ -1196,8 +1248,8 @@ ui <- navbarPage(
                         column(1,
                                pickerInput('season_5',
                                            '',# "Season:",
-                                           choices = c(2023,2024,2025),
-                                           selected = most_recent_season(), #,c(2023,2024,2025),
+                                           choices = c(2023:most_recent_season()),
+                                           selected = most_recent_season(), #,c(2023:most_recent_season()),
                                            multiple = TRUE,
                                            options = list(`actions-box` = TRUE, `selected-text-format`= "static",
                                                           title = "Season:")
@@ -1302,7 +1354,7 @@ server <- function(input, output) {
     applied_overview$wp <- input$wp
     applied_overview$down <- or_all(input$down, 1:4)
     applied_overview$qtr <- or_all(input$qtr, 1:5)
-    applied_overview$season <- or_all(input$season, c(2023,2024,2025))
+    applied_overview$season <- or_all(input$season, c(2023:most_recent_season()))
     applied_overview$fp <- or_all(input$fp, personnel_choices)
     applied_overview$sp <- or_all(input$sp, personnel_choices)
   })
@@ -1322,9 +1374,18 @@ server <- function(input, output) {
         second_play_p = if_else(seq_as_start == seq_group, t_next_p, offense_p)
       ) %>%
       filter(
-        first_play_p %in% applied_overview$fp,
-        second_play_p %in% applied_overview$sp
+        personnel_match(first_play_p, applied_overview$fp),
+        personnel_match(second_play_p, applied_overview$sp)
       )
+    
+    # Guard: with these filters (commonly: a season with no data yet, e.g.
+    # early in a new season before the pipeline has run), `t` can end up
+    # with zero rows. seq_table() would then return an empty table and
+    # arrange()/mutate() would still work, but show the user *why* the
+    # table is blank rather than a confusing empty grid.
+    validate(
+      need(nrow(t) > 0, "No plays match the selected filters (check Season/Week/Personnel — data may not be available yet for the selected season).")
+    )
     
     pbp <- app_data$pbp %>% 
       filter(between(week,as.numeric(min(applied_overview$week)),as.numeric(max(applied_overview$week))),
@@ -1332,7 +1393,7 @@ server <- function(input, output) {
              down %in% applied_overview$down,
              qtr %in% applied_overview$qtr,
              season %in% applied_overview$season,
-             (offense_p %in% applied_overview$fp | offense_p %in% applied_overview$sp) )
+             (personnel_match(offense_p, applied_overview$fp) | personnel_match(offense_p, applied_overview$sp)) )
     
     lg_avg <- calculate_league_averages(t,pbp)
     # print(head(app_data$all_seq))
@@ -1597,7 +1658,7 @@ server <- function(input, output) {
     applied_overview_2$wp <- input$wp_2      
     applied_overview_2$down <- or_all(input$down_2, 1:4)
     applied_overview_2$qtr <- or_all(input$qtr_2, 1:5)
-    applied_overview_2$season <- or_all(input$season_2, c(2023,2024,2025))
+    applied_overview_2$season <- or_all(input$season_2, c(2023:most_recent_season()))
     applied_overview_2$fp <- or_all(input$fp2, personnel_choices)
     applied_overview_2$sp <- or_all(input$sp2, personnel_choices)
   })
@@ -1610,8 +1671,8 @@ server <- function(input, output) {
              down %in% applied_overview_2$down,
              qtr %in% applied_overview_2$qtr,
              season %in% applied_overview_2$season,
-             t_last_p %in% applied_overview_2$fp,
-             offense_p %in% applied_overview_2$sp)
+             personnel_match(t_last_p, applied_overview_2$fp),
+             personnel_match(offense_p, applied_overview_2$sp))
     
     subtitle <- paste0(paste(sort(applied_overview_2$season), collapse = ", "), " Season(s) • Weeks ", min(tree_data$week), "-", max(tree_data$week), 
                        " • Win Probability ", min(applied_overview_2$wp), "%-", max(applied_overview_2$wp), "%",
@@ -1648,7 +1709,7 @@ server <- function(input, output) {
     applied_overview_3$wp <- input$wp_3      
     applied_overview_3$down <- or_all(input$down_3, 1:4)
     applied_overview_3$qtr <- or_all(input$qtr_3, 1:5)
-    applied_overview_3$season <- or_all(input$season_3, c(2023,2024,2025))
+    applied_overview_3$season <- or_all(input$season_3, c(2023:most_recent_season()))
     applied_overview_3$fp <- or_all(input$fp3, personnel_choices)
     applied_overview_3$sp <- or_all(input$sp3, personnel_choices)
   })
@@ -1661,8 +1722,8 @@ server <- function(input, output) {
              down %in% applied_overview_3$down,
              qtr %in% applied_overview_3$qtr,
              season %in% applied_overview_3$season,
-             t_last_p %in% applied_overview_3$fp,
-             offense_p %in% applied_overview_3$sp)
+             personnel_match(t_last_p, applied_overview_3$fp),
+             personnel_match(offense_p, applied_overview_3$sp))
     
     subtitle <- paste0(paste(sort(applied_overview_3$season), collapse = ", "), " Season(s) • Weeks ", min(def_data$week), "-", max(def_data$week), 
                        " • Win Probability ", min(applied_overview_3$wp), "%-", max(applied_overview_3$wp), "%",
@@ -1700,7 +1761,7 @@ server <- function(input, output) {
     applied_overview_4$dist <- or_all(input$dist, c('10+','10-7','6-4','3-1','GTG'))
     applied_overview_4$down <- or_all(input$down_4, 1:4)
     applied_overview_4$qtr <- or_all(input$qtr_4, 1:5)
-    applied_overview_4$season <- or_all(input$season_4, c(2023,2024,2025))
+    applied_overview_4$season <- or_all(input$season_4, c(2023:most_recent_season()))
     applied_overview_4$personnel <- or_all(input$personnel, personnel_choices)
   })
   
@@ -1714,7 +1775,7 @@ server <- function(input, output) {
              season %in% applied_overview_4$season,
              penalty == 0,
              playType %in% c("Run","Pass"),
-             (offense_p %in% applied_overview_4$personnel))
+             (personnel_match(offense_p, applied_overview_4$personnel)))
     
     team_stats <- base %>% 
       group_by(posteam) %>% 
@@ -1723,6 +1784,14 @@ server <- function(input, output) {
     
     this_team <- team_stats %>% filter(posteam == applied_overview_4$tm)
     n_teams <- team_stats %>% pull(posteam) %>% n_distinct()
+    
+    # Guard: if this team has zero plays matching the current filters
+    # (e.g. a distance/personnel/down combo it never used), this_team is
+    # a 0-row tibble and this_team$epa etc. are length-0 — value_box()
+    # requires a scalar, so it would error rather than just showing blank.
+    if (nrow(this_team) == 0) {
+      this_team <- tibble(epa = NA_real_, sr = NA_real_, plays = 0L, rank = NA_integer_)
+    }
     
     team_colors <- teams_colors_logos %>% filter(team_abbr == applied_overview_4$tm)
     c1 <- team_colors %>% pull(team_color)
@@ -1748,7 +1817,7 @@ server <- function(input, output) {
              season %in% applied_overview_4$season,
              penalty == 0,
              playType %in% c("Run","Pass"),
-             (offense_p %in% applied_overview_4$personnel)) %>% 
+             (personnel_match(offense_p, applied_overview_4$personnel))) %>% 
       arrange(week, game_id, play_id)
     
     team_name <- teams_colors_logos %>% 
@@ -1815,11 +1884,26 @@ server <- function(input, output) {
              dist %in% applied_overview_4$dist,
              season %in% applied_overview_4$season,
              pass == 1 & !is.na(pass_location),
-             (offense_p %in% applied_overview_4$personnel))
+             (personnel_match(offense_p, applied_overview_4$personnel)))
     
     team_name <- teams_colors_logos %>% 
       filter(team_abbr == applied_overview_4$tm) %>% 
       pull(team_name)
+    
+    # Guard: with zero pass plays matching these filters, league_mid below
+    # becomes mean(numeric(0)) = NaN, and scale_fill_gradient2(midpoint =
+    # NaN) errors at render time instead of just showing an empty chart.
+    if (nrow(pass_plays) == 0) {
+      return(
+        ggplot() +
+          annotate("text", x = 0.5, y = 0.5, color = "white", size = 6, fontface = "bold",
+                   label = paste0("No pass plays for ", team_name, " with the current filters.")) +
+          xlim(0, 1) + ylim(0, 1) +
+          labs(title = paste0(team_name, ' Pass Plays | 0 plays')) +
+          apply_theme() +
+          theme(axis.text = element_blank(), axis.title = element_blank())
+      )
+    }
     
     subtitle <- paste0(paste(sort(applied_overview_4$season), collapse = ", "), " Season(s) • Weeks ", min(pass_plays$week), "-", max(pass_plays$week), 
                        " • Win Probability ", min(applied_overview_4$wp), "%-", max(applied_overview_4$wp), "%",
@@ -1836,7 +1920,7 @@ server <- function(input, output) {
              dist %in% applied_overview_4$dist,
              season %in% applied_overview_4$season,
              pass == 1 & !is.na(pass_location),
-             (offense_p %in% applied_overview_4$personnel))
+             (personnel_match(offense_p, applied_overview_4$personnel)))
     
     league_mid <- case_when(
       input$tile == 'EPA/Play' ~ mean(league_base$epa, na.rm = TRUE),
@@ -1942,7 +2026,27 @@ server <- function(input, output) {
                dist %in% applied_overview_4$dist &
                season %in% applied_overview_4$season &
                (rush == 1| qb_scramble == 1) &
-               (offense_p %in% applied_overview_4$personnel)) 
+               (personnel_match(offense_p, applied_overview_4$personnel))) 
+    
+    team_name <- teams_colors_logos %>% 
+      filter(team_abbr == applied_overview_4$tm) %>% 
+      pull(team_name)
+    
+    # Guard: with zero rush plays matching these filters, avg_epa below
+    # becomes mean(numeric(0)) = NaN, and scale_color_gradient2(midpoint =
+    # NaN) errors at render time instead of just showing an empty chart.
+    if (nrow(rush_data) == 0) {
+      return(
+        ggplot() +
+          annotate("text", x = 0.5, y = 0.5, color = "white", size = 6, fontface = "bold",
+                   label = paste0("No run plays for ", team_name, " with the current filters.")) +
+          xlim(0, 1) + ylim(0, 1) +
+          labs(title = paste0(team_name, ' Run Plays & QB Scrambles | 0 Plays')) +
+          apply_theme() +
+          theme(axis.text = element_blank(), axis.title = element_blank())
+      )
+    }
+    
     rush <- rush_data %>% 
       group_by(run_location, run_gap, penalty) %>% 
       reframe(plays = n(),
@@ -1980,7 +2084,7 @@ server <- function(input, output) {
                dist %in% applied_overview_4$dist &
                season %in% applied_overview_4$season &
                (rush == 1| qb_scramble == 1) &
-               (offense_p %in% applied_overview_4$personnel)) %>% 
+               (personnel_match(offense_p, applied_overview_4$personnel))) %>% 
       pull(epa) %>% 
       mean(na.rm = TRUE)
     total_runs <- sum(rush$plays)
@@ -1995,7 +2099,7 @@ server <- function(input, output) {
                dist %in% applied_overview_4$dist &
                season %in% applied_overview_4$season &
                (rush == 1| qb_scramble == 1) &
-               (offense_p %in% applied_overview_4$personnel)) %>% 
+               (personnel_match(offense_p, applied_overview_4$personnel))) %>% 
       group_by(posteam, run_location, run_gap, penalty) %>% 
       reframe(sr = mean(success), epa = mean(epa)) %>% 
       mutate(gap_side = case_when(
@@ -2131,7 +2235,7 @@ server <- function(input, output) {
     applied_overview_5$dist <- or_all(input$dist_2, c('10+','10-7','6-4','3-1','GTG'))
     applied_overview_5$down <- or_all(input$down_5, 1:4)
     applied_overview_5$qtr <- or_all(input$qtr_5, 1:5)
-    applied_overview_5$season <- or_all(input$season_5, c(2023,2024,2025))
+    applied_overview_5$season <- or_all(input$season_5, c(2023:most_recent_season()))
     applied_overview_5$personnel <- or_all(input$personnel_2, personnel_choices)
   })
   
@@ -2145,16 +2249,20 @@ server <- function(input, output) {
              season %in% applied_overview_5$season,
              penalty == 0,
              playType %in% c("Run","Pass"),
-             (offense_p %in% applied_overview_5$personnel))
+             (personnel_match(offense_p, applied_overview_5$personnel)))
     
     team_stats <- base %>% 
       group_by(defteam) %>% 
       reframe(epa = mean(epa, na.rm = TRUE), sr = mean(success, na.rm = TRUE), plays = n()) %>% 
       mutate(rank = dense_rank(epa))
-    print(team_stats |> filter(defteam == 'ARI'))
     this_team <- team_stats %>% filter(defteam == applied_overview_5$tm)
-    print(this_team)
     n_teams <- team_stats %>% pull(defteam) %>% n_distinct()
+    
+    # Guard: same zero-play edge case as the offensive KPI block (Tab 4) —
+    # value_box() needs a scalar, not a length-0 value.
+    if (nrow(this_team) == 0) {
+      this_team <- tibble(epa = NA_real_, sr = NA_real_, plays = 0L, rank = NA_integer_)
+    }
     
     team_colors <- teams_colors_logos %>% filter(team_abbr == applied_overview_5$tm)
     c1 <- team_colors %>% pull(team_color)
@@ -2181,7 +2289,7 @@ server <- function(input, output) {
              season %in% applied_overview_5$season,
              penalty == 0,
              playType %in% c("Run","Pass"),
-             (offense_p %in% applied_overview_5$personnel)) %>% 
+             (personnel_match(offense_p, applied_overview_5$personnel))) %>% 
       arrange(week, game_id, play_id)
     
     team_name <- teams_colors_logos %>% 
@@ -2251,11 +2359,26 @@ server <- function(input, output) {
              dist %in% applied_overview_5$dist,
              season %in% applied_overview_5$season,
              pass == 1 & !is.na(pass_location),
-             (offense_p %in% applied_overview_5$personnel))
+             (personnel_match(offense_p, applied_overview_5$personnel)))
     
     team_name <- teams_colors_logos %>% 
       filter(team_abbr == applied_overview_5$tm) %>% 
       pull(team_name)
+    
+    # Guard: with zero pass plays matching these filters, league_mid below
+    # becomes mean(numeric(0)) = NaN, and scale_fill_gradient2(midpoint =
+    # NaN) errors at render time instead of just showing an empty chart.
+    if (nrow(pass_plays) == 0) {
+      return(
+        ggplot() +
+          annotate("text", x = 0.5, y = 0.5, color = "white", size = 6, fontface = "bold",
+                   label = paste0("No pass plays allowed by ", team_name, " with the current filters.")) +
+          xlim(0, 1) + ylim(0, 1) +
+          labs(title = paste0(team_name, ' Defensive Pass Plays | 0 plays')) +
+          apply_theme() +
+          theme(axis.text = element_blank(), axis.title = element_blank())
+      )
+    }
     
     subtitle <- paste0(paste(sort(applied_overview_5$season), collapse = ", "), " Season(s) • Weeks ", min(pass_plays$week), "-", max(pass_plays$week), 
                        " • Win Probability ", min(applied_overview_5$wp), "%-", max(applied_overview_5$wp), "%",
@@ -2272,7 +2395,7 @@ server <- function(input, output) {
              dist %in% applied_overview_5$dist,
              season %in% applied_overview_5$season,
              pass == 1 & !is.na(pass_location),
-             (offense_p %in% applied_overview_5$personnel))
+             (personnel_match(offense_p, applied_overview_5$personnel)))
     
     league_mid <- case_when(
       input$tile_2 == 'EPA/Play' ~ mean(league_base$epa, na.rm = TRUE),
@@ -2377,7 +2500,27 @@ server <- function(input, output) {
                dist %in% applied_overview_5$dist &
                season %in% applied_overview_5$season &
                (rush == 1| qb_scramble == 1) &
-               (offense_p %in% applied_overview_5$personnel)) 
+               (personnel_match(offense_p, applied_overview_5$personnel))) 
+    
+    team_name <- teams_colors_logos %>% 
+      filter(team_abbr == applied_overview_5$tm) %>% 
+      pull(team_name)
+    
+    # Guard: with zero rush plays matching these filters, avg_epa below
+    # becomes mean(numeric(0)) = NaN, and scale_color_gradient2(midpoint =
+    # NaN) errors at render time instead of just showing an empty chart.
+    if (nrow(rush_data) == 0) {
+      return(
+        ggplot() +
+          annotate("text", x = 0.5, y = 0.5, color = "white", size = 6, fontface = "bold",
+                   label = paste0("No run plays allowed by ", team_name, " with the current filters.")) +
+          xlim(0, 1) + ylim(0, 1) +
+          labs(title = paste0(team_name, ' Defensive Run Plays & QB Scrambles | 0 Plays')) +
+          apply_theme() +
+          theme(axis.text = element_blank(), axis.title = element_blank())
+      )
+    }
+    
     rush <- rush_data %>% 
       group_by(run_location, run_gap, penalty) %>% 
       reframe(plays = n(),
@@ -2415,7 +2558,7 @@ server <- function(input, output) {
                dist %in% applied_overview_5$dist &
                season %in% applied_overview_5$season &
                (rush == 1| qb_scramble == 1) &
-               (offense_p %in% applied_overview_5$personnel)) %>% 
+               (personnel_match(offense_p, applied_overview_5$personnel))) %>% 
       pull(epa) %>% 
       mean(na.rm = TRUE)
     total_runs <- sum(rush$plays)
@@ -2431,7 +2574,7 @@ server <- function(input, output) {
                dist %in% applied_overview_5$dist &
                season %in% applied_overview_5$season &
                (rush == 1| qb_scramble == 1) &
-               (offense_p %in% applied_overview_5$personnel)) %>% 
+               (personnel_match(offense_p, applied_overview_5$personnel))) %>% 
       group_by(defteam, run_location, run_gap, penalty) %>% 
       reframe(sr = mean(success), epa = mean(epa)) %>% 
       mutate(gap_side = case_when(

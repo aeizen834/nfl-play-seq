@@ -1,3 +1,4 @@
+# rm(list = ls())
 library(tidyverse)
 library(rvest)
 library(ggpattern)
@@ -62,12 +63,27 @@ classify_personnel <- function(offense_personnel) {
 }
 #####
 ###############################################################################
-formations <- load_participation(seasons = most_recent_season()) |> 
-  filter(!(nflverse_game_id %in% existing_ids)) |>
-  mutate(offense_p = classify_personnel(offense_personnel)) |>
-  # filter(!is.na(offense_formation)) |> 
-  select(nflverse_game_id, play_id, offense_formation, offense_personnel, offense_p) |> 
-  rename(game_id = nflverse_game_id)
+raw_participation <- tryCatch(
+  suppressWarnings(load_participation(seasons = most_recent_season())),
+  error = function(e) NULL
+)
+
+if (is.null(raw_participation) || nrow(raw_participation) == 0) {
+  message("No participation data available yet for ", most_recent_season(), " — skipping this update.")
+  formations <- tibble(
+    game_id = character(),
+    play_id = numeric(),
+    offense_formation = character(),
+    offense_personnel = character(),
+    offense_p = character()
+  )
+} else {
+  formations <- raw_participation |>
+    filter(!(nflverse_game_id %in% existing_ids)) |>
+    mutate(offense_p = classify_personnel(offense_personnel)) |>
+    select(nflverse_game_id, play_id, offense_formation, offense_personnel, offense_p) |>
+    rename(game_id = nflverse_game_id)
+}
 
 play_by_play <- load_pbp(seasons = most_recent_season()) %>% 
   filter(!(game_id %in% existing_ids)) |>
@@ -142,9 +158,26 @@ for (i in 1:4) {
   all_seq <- bind_rows(all_seq,Seq_1)
 }
 
-charting_data <- nflreadr::load_ftn_charting(most_recent_season()) %>% 
-  filter(!(nflverse_game_id %in% existing_ids)) |>
-  select(-week, -season)
+
+raw_charting <- tryCatch(
+  suppressWarnings(load_ftn_charting(seasons = most_recent_season())),
+  error = function(e) NULL
+)
+
+if (is.null(raw_charting) || nrow(raw_charting) == 0) {
+  message("No charting data available yet for ", most_recent_season(), " — skipping this update.")
+  charting_data <- tibble(
+    nflverse_game_id = character(),
+    nflverse_play_id = numeric(),
+    is_catchable_ball = logical(), 
+    is_screen_pass = logical()
+  )
+} else {
+  charting_data <- nflreadr::load_ftn_charting(seasons = most_recent_season()) %>% 
+    filter(!(nflverse_game_id %in% existing_ids)) |>
+    select(-week, -season)
+}
+
 
 play_data <- load_pbp(most_recent_season()) %>%
   filter(!(game_id %in% existing_ids)) |>

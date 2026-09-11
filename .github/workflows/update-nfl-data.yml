@@ -49,7 +49,8 @@ jobs:
           'tidyverse', 'nflverse', 'rvest', 'ggpattern', 
           'shadowtext', 'vistime', 'ggthemes', 'showtext',
           'sysfonts', 'ggtext', 'ggimage', 'gt', 'gtExtras',
-          'shiny', 'bslib', 'scales', 'rsconnect', 'mailR', 'DT'
+          'shiny', 'shinyjs', 'shinyWidgets', 'bslib', 'scales',
+          'rsconnect', 'mailR', 'DT', 'cpp11', 'progress'
         ))
         "
         

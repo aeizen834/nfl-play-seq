@@ -9,6 +9,11 @@ on:
     # Friday 6 AM EST (11 AM UTC)
     - cron: '0 11 * * 5'
   workflow_dispatch:  # Allows manual triggering
+    inputs:
+      rebuild_seasons:
+        description: 'Seasons to fully rebuild, comma-separated (e.g. 2025,2026). Leave blank to only add new games.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -55,6 +60,8 @@ jobs:
         "
         
     - name: Run data update script
+      env:
+        REBUILD_SEASONS: ${{ github.event.inputs.rebuild_seasons }}
       run: |
         Rscript -e "
         tryCatch({
@@ -80,7 +87,11 @@ jobs:
           echo "Error: NFL pbp.csv not found after data update"
           exit 1
         fi
-        echo "Both data files confirmed to exist"
+        if [ ! -f "Full pbp.csv.gz" ]; then
+          echo "Error: Full pbp.csv.gz not found after data update"
+          exit 1
+        fi
+        echo "All data files confirmed to exist"
         
     - name: Deploy to shinyapps.io
       run: |
@@ -119,7 +130,9 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add All\ Seq.csv NFL\ pbp.csv
+        # Full pbp must be committed too -- the update script only downloads
+        # new games, so anything not saved here is lost on the next run
+        git add All\ Seq.csv NFL\ pbp.csv Full\ pbp.csv.gz
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else

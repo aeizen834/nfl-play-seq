@@ -512,11 +512,16 @@ create_sequence_matrix <- function(data, subtitle, team = 'DET', side = 'Off', c
 }
 
 
+# guess_max = Inf: by default read_csv guesses column types from the first
+# 1000 rows, and the newest rows (no personnel yet) sit at the top -- so
+# offense_p was guessed as logical and every real personnel value read as NA.
 load_app_data <- function(){
-  list(all_seq = read_csv('All Seq.csv', show_col_types = F),
-       pbp = read_csv('NFL pbp.csv', show_col_types = F) %>% 
+  list(all_seq = read_csv('All Seq.csv', show_col_types = F, guess_max = Inf),
+       pbp = read_csv('NFL pbp.csv', show_col_types = F, guess_max = Inf) %>%
          mutate(Run = if_else(playType == 'Run',1,0)),
-       full_data = read_csv('Full pbp.csv', show_col_types = F)
+       # gzipped -- as a plain CSV it's over GitHub's 100 MB file limit
+       full_data = read_csv('Full pbp.csv.gz', show_col_types = F, guess_max = Inf,
+                            col_types = cols(time = col_character()))
   )
 }
 

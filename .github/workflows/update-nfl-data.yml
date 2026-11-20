@@ -39,12 +39,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
         
+    - name: Record runner image for cache key
+      run: echo "IMAGE_OS=$ImageOS" >> "$GITHUB_ENV"
+
     - name: Cache R packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ env.R_LIBS_USER }}
-        key: ${{ runner.os }}-${{ env.ImageOS }}-r-${{ hashFiles('DESCRIPTION') }}
-        restore-keys: ${{ runner.os }}-${{ env.ImageOS }}-r-
+        key: ${{ runner.os }}-${{ env.IMAGE_OS }}-r-${{ hashFiles('DESCRIPTION') }}
+        restore-keys: ${{ runner.os }}-${{ env.IMAGE_OS }}-r-
         
     - name: Install R dependencies
       run: |
